@@ -16,9 +16,7 @@ namespace DependencyParser
         private static readonly List<string> parsed = new List<string>();
 
         private static readonly List<string> toParse = new List<string>();
-
-        private static readonly Dictionary<string, IList<string>> dependencies = new Dictionary<string, IList<string>>();
-
+        
         static void Main(string[] args)
         {
             bool show_help = false;
@@ -58,7 +56,7 @@ namespace DependencyParser
                     writer.WriteAttributeString("name", definition.MainModule.Assembly.Name.Name);
                     writer.WriteAttributeString("version", definition.MainModule.Assembly.Name.Version.ToString());
 
-                    Analysis(writer, definition.MainModule, assemblyName);
+                    Analysis(writer, definition.MainModule, assemblyName, true);
 
                     while (toParse.Count > 0)
                     {
@@ -95,7 +93,7 @@ namespace DependencyParser
                                 }
                                 else
                                 {
-                                    Analysis(writer, definition.MainModule, targetFile.FullName);
+                                    Analysis(writer, definition.MainModule, targetFile.FullName, false);
                                 }
                             }
                         }
@@ -115,7 +113,7 @@ namespace DependencyParser
             }
         }
 
-        static void Analysis(XmlTextWriter writer, ModuleDefinition module, string fullPath)
+        static void Analysis(XmlTextWriter writer, ModuleDefinition module, string fullPath, bool withTypes)
         {
             try
             {
@@ -146,69 +144,20 @@ namespace DependencyParser
                 {
                     toParse.Add(item.FullName);
                 }
-
-                /*foreach (var t in module.Types)
-                {
-                    foreach (var c in t.CustomAttributes)
-                    {
-                        AddDependency(t, c.AttributeType);
-                    }
-
-                    if (t.BaseType != null)
-                    {
-                        AddDependency(t, t.BaseType);
-                    }
-
-                    foreach (var i in t.Interfaces)
-                    {
-                        AddDependency(t, i);
-                    }
-
-                    foreach (var e in t.Events)
-                    {
-                        AddDependency(t, e.EventType);
-                    }
-
-                    foreach (var f in t.Fields)
-                    {
-                        AddDependency(t, f.FieldType);
-                    }
-
-                    foreach (var p in t.Properties)
-                    {
-                        AddDependency(t, p.PropertyType);
-                    }
-
-                    foreach (var m in t.Methods)
-                    {
-                        AddDependency(t, m.ReturnType);
-
-                        foreach (var p in m.Parameters)
-                        {
-                            AddDependency(t, p.ParameterType);
-                        }
-
-                        if (m.Body != null)
-                        {
-                            //m.Body.Instructions[0].SequencePoint.Document
-
-                            foreach (var v in m.Body.Variables)
-                            {
-                                AddDependency(t, v.VariableType);
-                            }
-
-                            foreach (var e in m.Body.ExceptionHandlers)
-                            {
-                                if (e.CatchType != null)
-                                {
-                                    AddDependency(t, e.CatchType);
-                                }
-                            }
-                        }
-                    }
-                }*/
             }
             writer.WriteEndElement();
+
+            if (withTypes)
+            {
+                writer.WriteStartElement("TypeReferences");
+                foreach (var t in module.Types)
+                {
+                    ParseType(writer, t);
+                }
+
+                writer.WriteEndElement();
+            }
+
             writer.WriteEndElement();
 
             if (toParse.Contains(module.Assembly.Name.FullName))
@@ -219,25 +168,158 @@ namespace DependencyParser
             parsed.Add(module.Assembly.Name.FullName);
         }
 
-        public static void AddDependency(TypeDefinition from, TypeReference to)
+        public static void ParseType(XmlTextWriter writer, TypeDefinition t)
         {
-            IList<string> toList;
-            if (!dependencies.TryGetValue(from.FullName, out toList))
+            // ignore generated types
+            if (t.DeclaringType == null && t.Namespace.Equals(string.Empty))
             {
-                toList = new List<string>();
-                dependencies.Add(from.FullName, toList);
+                return;
             }
 
-            if (!to.FullName.StartsWith("System") && !to.FullName.StartsWith("Microsoft"))
+            if (t.Name.StartsWith("<>"))
             {
-                if (!to.IsGenericParameter)
+                return;
+            }
+
+            foreach (var n in t.NestedTypes)
+            {
+                ParseType(writer, n);
+            }
+
+            Dictionary<string, IList<string>> cache = new Dictionary<string, IList<string>>();
+            writer.WriteStartElement("From");
+            writer.WriteAttributeString("fullname", t.FullName);
+
+            foreach (var c in t.CustomAttributes)
+            {
+                AddDependency(writer, cache, t, c.AttributeType);
+            }
+
+            if (t.BaseType != null)
+            {
+                AddDependency(writer, cache, t, t.BaseType);
+            }
+
+            foreach (var i in t.Interfaces)
+            {
+                AddDependency(writer, cache, t, i);
+            }
+
+            foreach (var e in t.Events)
+            {
+                AddDependency(writer, cache, t, e.EventType);
+            }
+
+            foreach (var f in t.Fields)
+            {
+                AddDependency(writer, cache, t, f.FieldType);
+            }
+
+            foreach (var p in t.Properties)
+            {
+                AddDependency(writer, cache, t, p.PropertyType);
+            }
+
+            foreach (var m in t.Methods)
+            {
+                AddDependency(writer, cache, t, m.ReturnType);
+
+                foreach (var p in m.Parameters)
                 {
-                    if (!toList.Contains(to.FullName))
+                    AddDependency(writer, cache, t, p.ParameterType);
+                }
+
+                if (m.Body != null)
+                {
+                    //m.Body.Instructions[0].SequencePoint.Document
+
+                    foreach (var v in m.Body.Variables)
                     {
-                        toList.Add(to.FullName);
+                        AddDependency(writer, cache, t, v.VariableType);
+                    }
+
+                    foreach (var e in m.Body.ExceptionHandlers)
+                    {
+                        if (e.CatchType != null)
+                        {
+                            AddDependency(writer, cache, t, e.CatchType);
+                        }
                     }
                 }
             }
+
+            writer.WriteEndElement();
+        }
+
+        public static void AddDependency(XmlTextWriter writer, IDictionary<string, IList<string>> cache, TypeDefinition from, TypeReference to)
+        {
+            if (from.FullName.Equals(to.FullName))
+            {
+                return;
+            }
+
+            // ignore generic parameters
+            if (to.IsGenericParameter)
+            {
+                return;
+            }
+
+            // ignore generated types, without namespace
+            if (to.Namespace.Equals(string.Empty))
+            {
+                return;
+            }
+
+            if (to.IsArray)
+            {
+                to = to.GetElementType();
+            }
+
+            if (to.IsGenericInstance)
+            {
+                var generic = (GenericInstanceType)to;
+                foreach (var a in generic.GenericArguments)
+                {
+                    AddDependency(writer, cache, from, a);
+                }
+                to = to.GetElementType();
+            }
+
+            // ignore types from .Net framework
+            if (to.Scope.Name.Equals("mscorlib") || to.Scope.Name.StartsWith("System") || to.Scope.Name.StartsWith("Microsoft"))
+            {
+                return;
+            }
+
+            IList<string> toList;
+            if (!cache.TryGetValue(from.FullName, out toList))
+            {
+                toList = new List<string>();
+                cache.Add(from.FullName, toList);
+            }
+
+            if (toList.Contains(to.FullName))
+            {
+                return;
+            }
+
+            
+            writer.WriteStartElement("To");
+            writer.WriteAttributeString("fullname", to.FullName);
+            if (to.Scope is ModuleDefinition)
+            {
+                writer.WriteAttributeString("assemblyname", ((ModuleDefinition)to.Scope).Assembly.Name.Name);
+                writer.WriteAttributeString("assemblyversion", ((ModuleDefinition)to.Scope).Assembly.Name.Version.ToString());
+            }
+            else if(to.Scope is AssemblyNameReference)
+            {
+                writer.WriteAttributeString("assemblyname", ((AssemblyNameReference)to.Scope).Name);
+                writer.WriteAttributeString("assemblyversion", ((AssemblyNameReference)to.Scope).Version.ToString());
+            }
+
+            writer.WriteEndElement();
+
+            toList.Add(to.FullName);
         }
     }
 }
