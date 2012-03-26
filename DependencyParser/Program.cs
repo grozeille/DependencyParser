@@ -6,7 +6,6 @@ using Mono.Cecil;
 using System.IO;
 using System.Xml;
 using Mono.Cecil.Pdb;
-using Mono.Cecil.Rocks;
 using NDesk.Options;
 
 namespace DependencyParser
