@@ -10,13 +10,13 @@ using NDesk.Options;
 
 namespace DependencyParser
 {
-    class Program
+    public class Program
     {
         private static readonly List<string> parsed = new List<string>();
 
         private static readonly List<string> toParse = new List<string>();
         
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             bool show_help = false;
             string assemblyName =   @"C:\Users\mathias\Documents\visual studio 2010\Projects\chiffrage\Chiffrage\bin\Debug\Chiffrage.exe";
