@@ -12,27 +12,26 @@ namespace DependencyParser
 {
     public class Program
     {
-        private static readonly List<string> parsed = new List<string>();
+        private static readonly List<string> Parsed = new List<string>();
 
-        private static readonly List<string> toParse = new List<string>();
+        private static readonly List<string> ToParse = new List<string>();
         
         public static void Main(string[] args)
         {
-            bool show_help = false;
-            string assemblyName =   @"C:\Users\mathias\Documents\visual studio 2010\Projects\chiffrage\Chiffrage\bin\Debug\Chiffrage.exe";
+            bool showHelp = false;
+            string assemblyName =   "ASSEMBLY.DLL";
             string outputPath = "output.xml";
             
             var p = new OptionSet() 
             {
                 { "a|assembly=", "the name of the assembly to scan", v => assemblyName = v },
                 { "o|output=", "the path to the output XML", v => outputPath = v },
-                { "h|help",  "show this message and exit", v => show_help = v != null },
+                { "h|help",  "show this message and exit", v => showHelp = v != null },
             };
 
-            List<string> extra;
-            try
+        	try
             {
-                extra = p.Parse(args);
+                p.Parse(args);
             }
             catch (OptionException e)
             {
@@ -41,6 +40,14 @@ namespace DependencyParser
                 Console.WriteLine("Try `greet --help' for more information.");
                 return;
             }
+
+			if (showHelp)
+			{
+				Console.WriteLine("Use -a=[ASSSEMBLY] where ASSEMBLY is an assembly file");
+				Console.WriteLine("and -o=[OUTPUT] where OUTPUT is the xml report file that will be generated");
+				return;
+			}
+
 
             var targetFolder = Path.GetDirectoryName(assemblyName);
             using (var stream = new FileStream(outputPath, FileMode.Create))
@@ -57,11 +64,11 @@ namespace DependencyParser
 
                     Analysis(writer, definition.MainModule, assemblyName, true);
 
-                    while (toParse.Count > 0)
+                    while (ToParse.Count > 0)
                     {
                         definition = null;
-                        var fullName = toParse.First();
-                        var assemblyNameDef = AssemblyNameDefinition.Parse(fullName);
+                        var fullName = ToParse.First();
+                        var assemblyNameDef = AssemblyNameReference.Parse(fullName);
                         var name = assemblyNameDef.Name;
 
                         // find that file
@@ -87,8 +94,8 @@ namespace DependencyParser
                                 if (!definition.FullName.Equals(fullName))
                                 {
                                     Console.WriteLine("The existing file {0} doesn't match the fullName {1}, skip it", name, fullName);
-                                    toParse.Remove(fullName);
-                                    parsed.Add(fullName);
+                                    ToParse.Remove(fullName);
+                                    Parsed.Add(fullName);
                                 }
                                 else
                                 {
@@ -101,8 +108,8 @@ namespace DependencyParser
                             // how to do for the GAC?
                             //definition = AssemblyDefinition.ReadAssembly()
                             Console.WriteLine("Skip {0}... maybe in the GAC?", name);
-                            toParse.Remove(fullName);
-                            parsed.Add(fullName);
+                            ToParse.Remove(fullName);
+                            Parsed.Add(fullName);
                         }
                     }
 
@@ -139,9 +146,9 @@ namespace DependencyParser
                 writer.WriteAttributeString("version", item.Version.ToString());
                 writer.WriteEndElement();
 
-                if (!parsed.Contains(item.FullName) && !toParse.Contains(item.FullName))
+                if (!Parsed.Contains(item.FullName) && !ToParse.Contains(item.FullName))
                 {
-                    toParse.Add(item.FullName);
+                    ToParse.Add(item.FullName);
                 }
             }
             writer.WriteEndElement();
@@ -159,12 +166,12 @@ namespace DependencyParser
 
             writer.WriteEndElement();
 
-            if (toParse.Contains(module.Assembly.Name.FullName))
+            if (ToParse.Contains(module.Assembly.Name.FullName))
             {
-                toParse.Remove(module.Assembly.Name.FullName);
+                ToParse.Remove(module.Assembly.Name.FullName);
             }
 
-            parsed.Add(module.Assembly.Name.FullName);
+            Parsed.Add(module.Assembly.Name.FullName);
         }
 
         public static void ParseType(XmlTextWriter writer, TypeDefinition t)
