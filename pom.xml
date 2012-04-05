@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.codehaus.sonar-plugins.dotnet.tools</groupId>
   <artifactId>dependency-parser</artifactId>
-  <version>0.1-SNAPSHOT</version>
+  <version>1.2-SNAPSHOT</version>
   <packaging>netpack</packaging>
 
   <properties>
