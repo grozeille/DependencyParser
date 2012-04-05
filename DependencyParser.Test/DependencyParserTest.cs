@@ -8,7 +8,7 @@ using NUnit.Framework;
 namespace DependencyParser.Test {
 
 	[NUnit.Framework.TestFixture]
-	class DependencyParserTest {
+	public class DependencyParserTest {
 
 		[Test]
 		public void Should_Create_An_XML_Report()
