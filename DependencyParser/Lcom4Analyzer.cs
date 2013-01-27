@@ -21,7 +21,7 @@ namespace DependencyParser {
 			var memberBlocks = new Dictionary<MemberReference, HashSet<MemberReference>>();
 			foreach (var method in t.Methods)
 			{
-				if (NeedToBeFiltered(method))
+				if (NeedToBeFiltered(t, method))
 				{
 					continue;
 				}
@@ -53,7 +53,7 @@ namespace DependencyParser {
 						case OperandType.InlineMethod:
 							// special case for automatic properties since the 'backing' fields won't be used
 							MethodDefinition md = inst.Operand as MethodDefinition;
-							if (md != null && !NeedToBeFiltered(md))
+							if (md != null && !NeedToBeFiltered(t, md))
 							{
 								mr = md;
 							}
@@ -80,14 +80,16 @@ namespace DependencyParser {
 			return MergeBlocks(memberBlocks.Values);
 		}
 
-		private bool NeedToBeFiltered(MethodDefinition method)
+		private bool NeedToBeFiltered(TypeDefinition t, MethodDefinition method)
 		{
-			return !method.HasBody
+			return t != method.DeclaringType 
+				   ||!method.HasBody
 			       || (method.IsGeneratedCode() && !method.IsSetter && !method.IsGetter)
 			       || method.IsConstructor
 			       || (method.IsSpecialName && !method.IsSetter && !method.IsGetter)
 			       || "Dispose" == method.Name
-			       || "Equals" == method.Name
+			       || "ToString" == method.Name
+				   || "Equals" == method.Name
 				   || "GetHashCode" == method.Name;
 
 		}

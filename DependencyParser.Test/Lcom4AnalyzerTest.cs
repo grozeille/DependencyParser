@@ -25,6 +25,7 @@ namespace DependencyParser.Test {
 			var analyzer = new Lcom4Analyzer();
 			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.ClassWithManyMethodsAndStrongCohesion"));
 			Assert.AreEqual(1, blocks.Count);
+			Assert.AreEqual(5, blocks.ElementAt(0).Count);
 		}
 
 		[Test]
@@ -72,6 +73,14 @@ namespace DependencyParser.Test {
 		{
 			var analyzer = new Lcom4Analyzer();
 			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.SimpleClassWithEquals"));
+			Assert.AreEqual(2, blocks.Count);
+		}
+
+		[Test]
+		public void Should_Not_Take_In_Account_ToString_Methods()
+		{
+			var analyzer = new Lcom4Analyzer();
+			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.SimpleClassWithToString"));
 			Assert.AreEqual(2, blocks.Count);
 		}
 
@@ -151,7 +160,7 @@ namespace DependencyParser.Test {
 
 		private static void Foo()
 		{
-			Console.WriteLine("Whatever");
+			Console.WriteLine("Whatever".ToLower());
 		}
 
 		private static void Bar()
@@ -225,6 +234,27 @@ namespace DependencyParser.Test {
 		public static bool operator !=(SimpleClassWithEquals left, SimpleClassWithEquals right)
 		{
 			return !Equals(left, right);
+		}
+	}
+
+	public class SimpleClassWithToString {
+		private int fieldA;
+
+		private int fieldB;
+
+		public void doA()
+		{
+			fieldA++;
+		}
+
+		public void doB()
+		{
+			fieldB++;
+		}
+
+		public override string ToString()
+		{
+			return fieldA + " " + fieldB;
 		}
 	}
 }

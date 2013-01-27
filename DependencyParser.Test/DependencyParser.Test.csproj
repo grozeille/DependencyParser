@@ -53,9 +53,13 @@
   <ItemGroup>
     <Compile Include="DependencyParserTest.cs" />
     <Compile Include="Lcom4AnalyzerTest.cs" />
+    <Compile Include="Lcom4WriterTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="lcom4-expected.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="testdata\Example.Core.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

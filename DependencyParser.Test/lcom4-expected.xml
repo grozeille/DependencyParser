@@ -1,0 +1,1 @@
+﻿<type fullName="DependencyParser.Test.SimpleClassWithTwoFields"><block><element type="Method" name="System.Void doA()" /></block><block><element type="Method" name="System.Void doB()" /></block><block><element type="Method" name="System.Void .ctor()" /></block></type>

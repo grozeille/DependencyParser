@@ -15,7 +15,11 @@ namespace DependencyParser
         private static readonly List<string> Parsed = new List<string>();
 
         private static readonly List<string> ToParse = new List<string>();
-        
+
+		private static readonly Lcom4Analyzer lcom4Analyzer = new Lcom4Analyzer();
+
+		private static readonly Lcom4Writer lcom4Writer = new Lcom4Writer();
+
         public static void Main(string[] args)
         {
             bool showHelp = false;
@@ -162,6 +166,11 @@ namespace DependencyParser
                 }
 
                 writer.WriteEndElement();
+				writer.WriteStartElement("lcom4");
+				foreach (var t in module.Types) {
+					ParseTypeLcom4Blocks(writer, t);
+				}
+				writer.WriteEndElement();
             }
 
             writer.WriteEndElement();
@@ -173,6 +182,12 @@ namespace DependencyParser
 
             Parsed.Add(module.Assembly.Name.FullName);
         }
+
+		public static void ParseTypeLcom4Blocks(XmlTextWriter writer, TypeDefinition t)
+		{
+			var blocks = lcom4Analyzer.FindLcomBlocks(t);
+			lcom4Writer.Write(writer, t, blocks);
+		}
 
         public static void ParseType(XmlTextWriter writer, TypeDefinition t)
         {
