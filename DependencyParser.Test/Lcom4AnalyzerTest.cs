@@ -84,6 +84,24 @@ namespace DependencyParser.Test {
 			Assert.AreEqual(2, blocks.Count);
 		}
 
+		[Test]
+		public void Should_Not_Take_In_Account_Methods_From_Wrapped_Objects()
+		{
+			var analyzer = new Lcom4Analyzer();
+			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.SimpleClassWithDelegation"));
+			Assert.AreEqual(1, blocks.Count);
+			Assert.AreEqual(3, blocks.ElementAt(0).Count);
+		}
+
+		[Test]
+		public void Should_Not_Take_In_Account_Inherited_Methods()
+		{
+			var analyzer = new Lcom4Analyzer();
+			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.DerivedClass"));
+			Assert.AreEqual(1, blocks.Count);
+			Assert.AreEqual(3, blocks.ElementAt(0).Count);
+		}
+
 		private TypeDefinition getType(string name)
 		{
 			string unit = Assembly.GetExecutingAssembly().Location;
@@ -255,6 +273,33 @@ namespace DependencyParser.Test {
 		public override string ToString()
 		{
 			return fieldA + " " + fieldB;
+		}
+	}
+
+	public class SimpleClassWithDelegation {
+		private SimpleClassWithToString wrapped = new SimpleClassWithToString();
+
+		public void doA()
+		{
+			wrapped.doA();
+		}
+
+		public void doB()
+		{
+			wrapped.doB();
+		}
+	}
+
+	public class DerivedClass : SimpleClassWithTwoFields {
+
+		public void doC()
+		{
+			doA();
+		}
+		public void doD()
+		{
+			doA();
+			doA();
 		}
 	}
 }

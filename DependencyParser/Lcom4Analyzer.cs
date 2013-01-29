@@ -82,7 +82,7 @@ namespace DependencyParser {
 
 		private bool NeedToBeFiltered(TypeDefinition t, MethodDefinition method)
 		{
-			return t != method.DeclaringType 
+			return (!t.AllSuperTypes().Contains(method.DeclaringType)
 				   ||!method.HasBody
 			       || (method.IsGeneratedCode() && !method.IsSetter && !method.IsGetter)
 			       || method.IsConstructor
@@ -90,7 +90,7 @@ namespace DependencyParser {
 			       || "Dispose" == method.Name
 			       || "ToString" == method.Name
 				   || "Equals" == method.Name
-				   || "GetHashCode" == method.Name;
+				   || "GetHashCode" == method.Name);
 
 		}
 
