@@ -29,11 +29,43 @@ namespace DependencyParser.Test {
 		}
 
 		[Test]
-		public void Should_Treat_Accessors_As_Normal_Methods()
+		public void Should_Ignore_Simple_Accessors()
 		{
 			var analyzer = new Lcom4Analyzer();
 			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.ClassWithProperties"));
+			Assert.AreEqual(0, blocks.Count);
+		}
+
+		[Test]
+		public void Should_Take_In_Account_Calls_To_Simple_Accessors()
+		{
+			var analyzer = new Lcom4Analyzer();
+			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.ClassWithCallsToAccessors"));
+			Assert.AreEqual(1, blocks.Count);
+		}
+
+		[Test]
+		public void Should_Take_In_Account_Complex_Accessors()
+		{
+			var analyzer = new Lcom4Analyzer();
+			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.ClassWithComplexProperties"));
 			Assert.AreEqual(2, blocks.Count);
+		}
+
+		[Test]
+		public void Should_Ignore_Abstract_Methods()
+		{
+			var analyzer = new Lcom4Analyzer();
+			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.AbstractClass"));
+			Assert.AreEqual(1, blocks.Count);
+		}
+
+		[Test]
+		public void Should_Take_In_Account_Calls_To_Abstract_Methods()
+		{
+			var analyzer = new Lcom4Analyzer();
+			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.AbstractTemplateClass"));
+			Assert.AreEqual(1, blocks.Count);
 		}
 
 		[Test]
@@ -45,7 +77,7 @@ namespace DependencyParser.Test {
 		}
 
 		[Test]
-		public void Should_Not_Fail__On_Empty_Interface()
+		public void Should_Not_Fail_On_Empty_Interface()
 		{
 			var analyzer = new Lcom4Analyzer();
 			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.IEmpty"));
@@ -53,7 +85,7 @@ namespace DependencyParser.Test {
 		}
 
 		[Test]
-		public void Should_Not_Fail__On_Empty_Class()
+		public void Should_Not_Fail_On_Empty_Class()
 		{
 			var analyzer = new Lcom4Analyzer();
 			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.EmptyClass"));
@@ -100,6 +132,14 @@ namespace DependencyParser.Test {
 			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.DerivedClass"));
 			Assert.AreEqual(1, blocks.Count);
 			Assert.AreEqual(3, blocks.ElementAt(0).Count);
+		}
+
+		[Test]
+		public void Should_Not_Take_In_Account_Static_Methods()
+		{
+			var analyzer = new Lcom4Analyzer();
+			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.SimpleClassWithStaticMethod"));
+			Assert.AreEqual(1, blocks.Count);
 		}
 
 		private TypeDefinition getType(string name)
@@ -176,12 +216,12 @@ namespace DependencyParser.Test {
 			Bar();
 		}
 
-		private static void Foo()
+		private void Foo()
 		{
 			Console.WriteLine("Whatever".ToLower());
 		}
 
-		private static void Bar()
+		private void Bar()
 		{
 			Console.WriteLine("Whatever");
 		}
@@ -193,9 +233,88 @@ namespace DependencyParser.Test {
 		public string Name { get; set; }
 	}
 
+	public class ClassWithCallsToAccessors {
+		public int Counter { get; set; }
+
+		public string Name { get; set; }
+
+		public void Foo()
+		{
+			Console.WriteLine("Whatever " + Counter + " " + Name);
+		}
+
+		public void Bar()
+		{
+			Console.WriteLine("Whatever " + Counter + " " + Name);
+		}
+	}
+
+	public class ClassWithComplexProperties {
+		private int counter;
+		
+		public int Counter
+		{
+			get
+			{
+				if (counter>10)
+				{
+					return 10;
+				}
+				return counter;	
+			}
+			
+			set
+			{
+				counter = value;
+			}
+		}
+
+		public void Foo()
+		{
+			Console.WriteLine("Whatever".ToLower());
+		}
+	}
+
+	public abstract class AbstractClass {
+
+		public void DoA()
+		{
+			Foo();
+		}
+
+		public void DoB()
+		{
+			Foo();
+		}
+
+
+		public abstract void DoC();
+
+		private void Foo()
+		{
+			Console.WriteLine("Whatever".ToLower());
+		}
+	}
+
+	public abstract class AbstractTemplateClass {
+
+		public void DoA()
+		{
+			DoC();
+		}
+
+		public void DoB()
+		{
+			DoC();
+		}
+
+		public abstract void DoC();
+
+	}
+
 	public class SimpleDisposableClass : IDisposable
 	{
-		public void doSomething()
+		public void DoSomething()
 		{
 			Console.WriteLine("Whatever");
 		}
@@ -211,12 +330,12 @@ namespace DependencyParser.Test {
 
 		private int fieldB;
 
-		public void doA()
+		public void DoA()
 		{
 			fieldA++;
 		}
 
-		public void doB()
+		public void DoB()
 		{
 			fieldB++;
 		}
@@ -300,6 +419,26 @@ namespace DependencyParser.Test {
 		{
 			doA();
 			doA();
+		}
+	}
+
+	public class SimpleClassWithStaticMethod {
+		private int counter;
+
+		public void Increment()
+		{
+			counter++;
+		}
+
+		public void Decrement()
+		{
+			counter--;
+		}
+
+		public static SimpleClassWithStaticMethod create()
+		{
+			Console.WriteLine("factory method");
+			return new SimpleClassWithStaticMethod();
 		}
 	}
 }

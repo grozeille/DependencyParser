@@ -37,53 +37,56 @@ namespace DependencyParser {
 					memberBlocks[method] = currentBlock;
 				}
 
-
-				foreach ( Instruction inst in method.Body.Instructions)
+				if (method.HasBody)
 				{
-					MemberReference mr = null;
-
-					switch (inst.OpCode.OperandType) {
-						case OperandType.InlineField:
-							FieldDefinition fd = inst.Operand as FieldDefinition;
-							if (null != fd && (!fd.IsGeneratedCode() || method.IsSetter || method.IsGetter))
-							{
-								mr = fd;
-							}
-							break;
-						case OperandType.InlineMethod:
-							// special case for automatic properties since the 'backing' fields won't be used
-							MethodDefinition md = inst.Operand as MethodDefinition;
-							if (md != null && !NeedToBeFiltered(t, md))
-							{
-								mr = md;
-							}
-							break;
-					}
-					if (mr!=null && !currentBlock.Contains(mr))
+					foreach (Instruction inst in method.Body.Instructions)
 					{
+						MemberReference mr = null;
 
-						if (memberBlocks.ContainsKey(mr))
+						switch (inst.OpCode.OperandType)
 						{
-							memberBlocks[mr].UnionWith(currentBlock);
-							currentBlock = memberBlocks[mr];
+							case OperandType.InlineField:
+								FieldDefinition fd = inst.Operand as FieldDefinition;
+								if (null != fd && (!fd.IsGeneratedCode() || method.IsSetter || method.IsGetter))
+								{
+									mr = fd;
+								}
+								break;
+							case OperandType.InlineMethod:
+								// special case for automatic properties since the 'backing' fields won't be used
+								MethodDefinition md = inst.Operand as MethodDefinition;
+								if (md != null && !NeedToBeFiltered(t, md))
+								{
+									mr = md;
+								}
+								break;
 						}
-						else
+						if (mr != null && !currentBlock.Contains(mr))
 						{
-							currentBlock.Add(mr);
-							memberBlocks[mr] = currentBlock;
+
+							if (memberBlocks.ContainsKey(mr))
+							{
+								memberBlocks[mr].UnionWith(currentBlock);
+								currentBlock = memberBlocks[mr];
+							}
+							else
+							{
+								currentBlock.Add(mr);
+								memberBlocks[mr] = currentBlock;
+							}
 						}
 					}
 				}
 				memberBlocks[method] = currentBlock;
 
 			}
-			return MergeBlocks(memberBlocks.Values);
+			return CleanBlocks(MergeBlocks(memberBlocks.Values));
 		}
 
 		private bool NeedToBeFiltered(TypeDefinition t, MethodDefinition method)
 		{
 			return (!t.AllSuperTypes().Contains(method.DeclaringType)
-				   ||!method.HasBody
+				   || method.IsStatic
 			       || (method.IsGeneratedCode() && !method.IsSetter && !method.IsGetter)
 			       || method.IsConstructor
 			       || (method.IsSpecialName && !method.IsSetter && !method.IsGetter)
@@ -93,7 +96,6 @@ namespace DependencyParser {
 				   || "GetHashCode" == method.Name);
 
 		}
-
 
 		private HashSet<HashSet<MemberReference>> MergeBlocks(IEnumerable<HashSet<MemberReference>> memberBlocks)
 		{
@@ -132,6 +134,23 @@ namespace DependencyParser {
 		{
 			var intersection = block.Intersect(mergeCandidate);
 			return intersection.Count() > 0;
+		}
+
+		private HashSet<HashSet<MemberReference>> CleanBlocks(HashSet<HashSet<MemberReference>> blocks)
+		{
+			foreach (var block in blocks)
+			{
+				block.RemoveWhere(ShouldBeRemoved);
+			}
+
+			blocks.RemoveWhere(b => b.Count(member => member is MethodDefinition) == 0);
+			return blocks;
+		}
+
+		private bool ShouldBeRemoved(MemberReference reference)
+		{
+			var method = reference as MethodDefinition;
+			return method!=null && (!method.HasBody || method.IsGeneratedCode());
 		}
 	}
 }

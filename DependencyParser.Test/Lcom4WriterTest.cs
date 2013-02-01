@@ -20,12 +20,14 @@ namespace DependencyParser.Test {
 			{
 				using (var writer = new XmlTextWriter(stream, Encoding.UTF8))
 				{
+					writer.Formatting = Formatting.Indented;
 					var lcom4Writer = new Lcom4Writer();
 					var typeDefinition = getType("DependencyParser.Test.SimpleClassWithTwoFields");
 					var blocks = new HashSet<HashSet<MemberReference>>();
+				
 					foreach (var mth in typeDefinition.Methods)
 					{
-						var block = new HashSet<MemberReference> {mth};
+						var block = new HashSet<MemberReference> { mth, typeDefinition.Fields.First() };
 						blocks.Add(block);
 					}
 					lcom4Writer.Write(writer, typeDefinition, blocks);
