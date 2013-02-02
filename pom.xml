@@ -9,6 +9,7 @@
   <properties>
     <visual.studio.solution>DependencyParser.sln</visual.studio.solution>
     <dotnet.tool.version>4.0</dotnet.tool.version>
+	<visual.test.project.pattern>*.Tests;*Test</visual.test.project.pattern>
   </properties>
   <build>
     <plugins>
