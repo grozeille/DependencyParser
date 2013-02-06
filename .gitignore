@@ -3,3 +3,6 @@ obj
 packages
 *.suo
 .sonar
+target
+*.user
+_ReSharper.DependencyParser

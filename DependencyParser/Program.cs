@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Gendarme.Framework;
 using Mono.Cecil;
 using System.IO;
 using System.Xml;
@@ -18,7 +19,9 @@ namespace DependencyParser
 
 		private static readonly Lcom4Analyzer lcom4Analyzer = new Lcom4Analyzer();
 
-		private static readonly Lcom4Writer lcom4Writer = new Lcom4Writer();
+		private static readonly ResponseForClassAnalyzer rfcAnalyzer = new ResponseForClassAnalyzer();
+
+		private static readonly DethOfInheritanceTreeAnalyzer ditAnalyzer = new DethOfInheritanceTreeAnalyzer();
 
         public static void Main(string[] args)
         {
@@ -58,7 +61,7 @@ namespace DependencyParser
             {
                 using (var writer = new XmlTextWriter(stream, Encoding.UTF8))
                 {
-                    var definition = AssemblyDefinition.ReadAssembly(assemblyName);
+					var definition = AssemblyDefinition.ReadAssembly(assemblyName, new ReaderParameters { AssemblyResolver = AssemblyResolver.Resolver });
 
                     writer.Formatting = Formatting.Indented;
                     writer.WriteStartDocument();
@@ -117,7 +120,8 @@ namespace DependencyParser
                         }
                     }
 
-                    writer.WriteEndElement();
+					writer.WriteEndElement();
+
                     writer.WriteEndDocument();
                 }
             }
@@ -166,11 +170,13 @@ namespace DependencyParser
                 }
 
                 writer.WriteEndElement();
-				writer.WriteStartElement("lcom4");
+				
+				writer.WriteStartElement("Design");
 				foreach (var t in module.Types) {
-					ParseTypeLcom4Blocks(writer, t);
+					GenerateTypeDesignMeasures(writer, t);
 				}
 				writer.WriteEndElement();
+				
             }
 
             writer.WriteEndElement();
@@ -183,10 +189,14 @@ namespace DependencyParser
             Parsed.Add(module.Assembly.Name.FullName);
         }
 
-		public static void ParseTypeLcom4Blocks(XmlTextWriter writer, TypeDefinition t)
+		public static void GenerateTypeDesignMeasures(XmlTextWriter writer, TypeDefinition t)
 		{
-			var blocks = lcom4Analyzer.FindLcomBlocks(t);
-			lcom4Writer.Write(writer, t, blocks);
+			var designWriter = new DesignMeasuresWriter() { Xml = writer, Type = t};
+			designWriter.Lcom4Blocks = lcom4Analyzer.FindLcomBlocks(t);
+			designWriter.ResponseForClass = rfcAnalyzer.ComputeRFC(t);
+			designWriter.DethOfInheritance = ditAnalyzer.ComputeDIT(t);
+
+			designWriter.Write();
 		}
 
         public static void ParseType(XmlTextWriter writer, TypeDefinition t)

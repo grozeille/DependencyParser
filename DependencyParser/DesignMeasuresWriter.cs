@@ -11,22 +11,34 @@ namespace DependencyParser {
 	/// <summary>
 	/// TODO: Update summary.
 	/// </summary>
-	public class Lcom4Writer {
+	public class DesignMeasuresWriter {
 
-		private readonly ReferenceComparer comparer = new ReferenceComparer();
+		private static readonly ReferenceComparer comparer = new ReferenceComparer();
 
-		public void Write(XmlTextWriter xml, TypeDefinition type, IEnumerable<IEnumerable<MemberReference>> blocks)
+		public XmlTextWriter Xml { set; private get; }
+
+		public TypeDefinition Type { set; private get; }
+
+		public int ResponseForClass { set; private get; }
+
+		public int DethOfInheritance { set; private get; }
+
+		public IEnumerable<IEnumerable<MemberReference>> Lcom4Blocks { set; private get; }
+
+		public void Write()
 		{
-			xml.WriteStartElement("type");
-			xml.WriteAttributeString("fullName", type.FullName);
-			foreach (var block in blocks)
+			Xml.WriteStartElement("type");
+			Xml.WriteAttributeString("fullName", Type.FullName);
+			Xml.WriteAttributeString("rfc", ResponseForClass.ToString());
+			Xml.WriteAttributeString("dit", DethOfInheritance.ToString());
+			foreach (var block in Lcom4Blocks)
 			{
 				var orderedBlock = block.OrderBy(x => x, comparer);
 
-				xml.WriteStartElement("block");
+				Xml.WriteStartElement("block");
 				foreach (var memberReference in orderedBlock)
 				{
-					xml.WriteStartElement("element");
+					Xml.WriteStartElement("element");
 					var method = memberReference as MethodDefinition;
 					string name;
 					string elementType;
@@ -39,13 +51,13 @@ namespace DependencyParser {
 						elementType = "Method";
 						name = BuildSignature(method);
 					}
-					xml.WriteAttributeString("type", elementType);
-					xml.WriteAttributeString("name", name);
-					xml.WriteEndElement();
+					Xml.WriteAttributeString("type", elementType);
+					Xml.WriteAttributeString("name", name);
+					Xml.WriteEndElement();
 				}
-				xml.WriteEndElement();
+				Xml.WriteEndElement();
 			}
-			xml.WriteEndElement();
+			Xml.WriteEndElement();
 		}
 
 		private string BuildFieldName(FieldDefinition field)

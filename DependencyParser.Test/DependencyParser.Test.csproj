@@ -53,9 +53,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DependencyParserTest.cs" />
+    <Compile Include="DethOfInheritanceTreeAnalyzerTest.cs" />
     <Compile Include="Lcom4AnalyzerTest.cs" />
-    <Compile Include="Lcom4WriterTest.cs" />
+    <Compile Include="DesignMeasuresWriterTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ResponseForClassAnalyzerTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="lcom4-expected.xml">
