@@ -15,7 +15,7 @@ namespace DependencyParser.Test {
 		public void Should_Find_One_Block_On_A_Simple_Class()
 		{
 			var analyzer = new Lcom4Analyzer();
-			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.SimpleClass"));
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.SimpleClass"));
 			Assert.AreEqual(1, blocks.Count);
 		}
 
@@ -23,7 +23,7 @@ namespace DependencyParser.Test {
 		public void Should_Find_One_Block_On_A_Class_With_Strong_Cohesion()
 		{
 			var analyzer = new Lcom4Analyzer();
-			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.ClassWithManyMethodsAndStrongCohesion"));
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.ClassWithManyMethodsAndStrongCohesion"));
 			Assert.AreEqual(1, blocks.Count);
 			Assert.AreEqual(5, blocks.ElementAt(0).Count);
 		}
@@ -32,7 +32,7 @@ namespace DependencyParser.Test {
 		public void Should_Ignore_Simple_Accessors()
 		{
 			var analyzer = new Lcom4Analyzer();
-			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.ClassWithProperties"));
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.ClassWithProperties"));
 			Assert.AreEqual(0, blocks.Count);
 		}
 
@@ -40,7 +40,7 @@ namespace DependencyParser.Test {
 		public void Should_Take_In_Account_Calls_To_Simple_Accessors()
 		{
 			var analyzer = new Lcom4Analyzer();
-			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.ClassWithCallsToAccessors"));
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.ClassWithCallsToAccessors"));
 			Assert.AreEqual(1, blocks.Count);
 		}
 
@@ -48,7 +48,7 @@ namespace DependencyParser.Test {
 		public void Should_Take_In_Account_Complex_Accessors()
 		{
 			var analyzer = new Lcom4Analyzer();
-			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.ClassWithComplexProperties"));
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.ClassWithComplexProperties"));
 			Assert.AreEqual(2, blocks.Count);
 		}
 
@@ -56,7 +56,7 @@ namespace DependencyParser.Test {
 		public void Should_Ignore_Abstract_Methods()
 		{
 			var analyzer = new Lcom4Analyzer();
-			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.AbstractClass"));
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.AbstractClass"));
 			Assert.AreEqual(1, blocks.Count);
 		}
 
@@ -64,7 +64,7 @@ namespace DependencyParser.Test {
 		public void Should_Take_In_Account_Calls_To_Abstract_Methods()
 		{
 			var analyzer = new Lcom4Analyzer();
-			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.AbstractTemplateClass"));
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.AbstractTemplateClass"));
 			Assert.AreEqual(1, blocks.Count);
 		}
 
@@ -72,7 +72,7 @@ namespace DependencyParser.Test {
 		public void Should_Ignore_Constructors()
 		{
 			var analyzer = new Lcom4Analyzer();
-			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.SimpleClassWithCtr"));
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.SimpleClassWithCtr"));
 			Assert.AreEqual(2, blocks.Count);
 		}
 
@@ -80,7 +80,7 @@ namespace DependencyParser.Test {
 		public void Should_Not_Fail_On_Empty_Interface()
 		{
 			var analyzer = new Lcom4Analyzer();
-			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.IEmpty"));
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.IEmpty"));
 			Assert.AreEqual(0, blocks.Count);
 		}
 
@@ -88,7 +88,7 @@ namespace DependencyParser.Test {
 		public void Should_Not_Fail_On_Empty_Class()
 		{
 			var analyzer = new Lcom4Analyzer();
-			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.EmptyClass"));
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.EmptyClass"));
 			Assert.AreEqual(0, blocks.Count);
 		}
 
@@ -96,7 +96,7 @@ namespace DependencyParser.Test {
 		public void Should_Not_Take_In_Account_Dispose_Methods()
 		{
 			var analyzer = new Lcom4Analyzer();
-			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.SimpleDisposableClass"));
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.SimpleDisposableClass"));
 			Assert.AreEqual(1, blocks.Count);
 		}
 		
@@ -104,7 +104,7 @@ namespace DependencyParser.Test {
 		public void Should_Not_Take_In_Account_Equals_Methods()
 		{
 			var analyzer = new Lcom4Analyzer();
-			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.SimpleClassWithEquals"));
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.SimpleClassWithEquals"));
 			Assert.AreEqual(2, blocks.Count);
 		}
 
@@ -112,7 +112,7 @@ namespace DependencyParser.Test {
 		public void Should_Not_Take_In_Account_ToString_Methods()
 		{
 			var analyzer = new Lcom4Analyzer();
-			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.SimpleClassWithToString"));
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.SimpleClassWithToString"));
 			Assert.AreEqual(2, blocks.Count);
 		}
 
@@ -120,7 +120,7 @@ namespace DependencyParser.Test {
 		public void Should_Not_Take_In_Account_Methods_From_Wrapped_Objects()
 		{
 			var analyzer = new Lcom4Analyzer();
-			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.SimpleClassWithDelegation"));
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.SimpleClassWithDelegation"));
 			Assert.AreEqual(1, blocks.Count);
 			Assert.AreEqual(3, blocks.ElementAt(0).Count);
 		}
@@ -129,7 +129,7 @@ namespace DependencyParser.Test {
 		public void Should_Not_Take_In_Account_Inherited_Methods()
 		{
 			var analyzer = new Lcom4Analyzer();
-			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.DerivedClass"));
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.DerivedClass"));
 			Assert.AreEqual(1, blocks.Count);
 			Assert.AreEqual(3, blocks.ElementAt(0).Count);
 		}
@@ -138,11 +138,11 @@ namespace DependencyParser.Test {
 		public void Should_Not_Take_In_Account_Static_Methods()
 		{
 			var analyzer = new Lcom4Analyzer();
-			var blocks = analyzer.FindLcomBlocks(getType("DependencyParser.Test.SimpleClassWithStaticMethod"));
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.SimpleClassWithStaticMethod"));
 			Assert.AreEqual(1, blocks.Count);
 		}
 
-		private TypeDefinition getType(string name)
+		private TypeDefinition GetType(string name)
 		{
 			string unit = Assembly.GetExecutingAssembly().Location;
 			var assembly = AssemblyDefinition.ReadAssembly(unit);

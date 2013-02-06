@@ -24,11 +24,11 @@
       <From fullname="Example.Core.SampleMeasure/Possible" />
       <From fullname="Example.Core.SampleMeasure" />
     </TypeReferences>
-    <lcom4>
-      <type fullName="&lt;Module&gt;" />
-      <type fullName="Example.Core.IMoney" />
-      <type fullName="Example.Core.Model.SubType" />
-      <type fullName="Example.Core.Money">
+    <Design>
+      <type fullName="&lt;Module&gt;" rfc="0" dit="0" />
+      <type fullName="Example.Core.IMoney" rfc="0" dit="0" />
+      <type fullName="Example.Core.Model.SubType" rfc="1" dit="1" />
+      <type fullName="Example.Core.Money" rfc="24" dit="1">
         <block>
           <element type="Field" name="fAmount" />
           <element type="Field" name="fCurrency" />
@@ -47,8 +47,8 @@
           <element type="Method" name="Example.Core.IMoney Subtract(Example.Core.IMoney)" />
         </block>
       </type>
-      <type fullName="Example.Core.Alex" />
-      <type fullName="Example.Core.MoneyBag">
+      <type fullName="Example.Core.Alex" rfc="3" dit="1" />
+      <type fullName="Example.Core.MoneyBag" rfc="44" dit="1">
         <block>
           <element type="Field" name="fMonies" />
           <element type="Method" name="Example.Core.IMoney AddMoney(Example.Core.Money)" />
@@ -67,7 +67,7 @@
           <element type="Method" name="Example.Core.IMoney Subtract(Example.Core.IMoney)" />
         </block>
       </type>
-      <type fullName="Example.Core.SampleMeasure">
+      <type fullName="Example.Core.SampleMeasure" rfc="14" dit="1">
         <block>
           <element type="Field" name="Size (property)" />
           <element type="Field" name="actual" />
@@ -78,6 +78,6 @@
           <element type="Method" name="System.String Compute(System.Int32)" />
         </block>
       </type>
-    </lcom4>
+    </Design>
   </Assembly>
 </Dependencies>
