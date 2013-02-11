@@ -23,17 +23,20 @@ namespace DependencyParser
 
 		private static readonly DethOfInheritanceTreeAnalyzer ditAnalyzer = new DethOfInheritanceTreeAnalyzer();
 
+		private static bool designAnalysis = false;
+
         public static void Main(string[] args)
         {
             bool showHelp = false;
             string assemblyName =   "ASSEMBLY.DLL";
             string outputPath = "output.xml";
-            
+
             var p = new OptionSet() 
             {
                 { "a|assembly=", "the name of the assembly to scan", v => assemblyName = v },
                 { "o|output=", "the path to the output XML", v => outputPath = v },
                 { "h|help",  "show this message and exit", v => showHelp = v != null },
+				{ "d|design",  "flag that enables design analysis", d => designAnalysis = d != null }
             };
 
         	try
@@ -171,8 +174,10 @@ namespace DependencyParser
 
                 writer.WriteEndElement();
 
-            	GenerateTypeDesignMeasures(writer, module);
-				
+				if (designAnalysis)
+				{
+					GenerateTypeDesignMeasures(writer, module);	
+				}
             }
 
             writer.WriteEndElement();
