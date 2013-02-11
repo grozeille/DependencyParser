@@ -11,7 +11,7 @@ using NUnit.Framework;
 namespace DependencyParser.Test {
 
 	[NUnit.Framework.TestFixture]
-	public class DesignMeasuresWriterTest {
+	public class DesignMeasuresTest {
 		[Test]
 		public void Should_Generate()
 		{
@@ -21,7 +21,7 @@ namespace DependencyParser.Test {
 				using (var writer = new XmlTextWriter(stream, Encoding.UTF8))
 				{
 					writer.Formatting = Formatting.Indented;
-					var designWriter = new DesignMeasuresWriter();
+					var designWriter = new DesignMeasures();
 					var typeDefinition = getType("DependencyParser.Test.SimpleClassWithTwoFields");
 					var blocks = new HashSet<HashSet<MemberReference>>();
 				
@@ -30,13 +30,12 @@ namespace DependencyParser.Test {
 						var block = new HashSet<MemberReference> { mth, typeDefinition.Fields.First() };
 						blocks.Add(block);
 					}
-					designWriter.Xml = writer;
 					designWriter.Type = typeDefinition;
 					designWriter.Lcom4Blocks = blocks;
 					designWriter.ResponseForClass = 42;
 					designWriter.DethOfInheritance = 17;
 
-					designWriter.Write();
+					designWriter.Write(writer);
 				}
 			}
 			string expected = File.ReadAllText("lcom4-expected.xml");

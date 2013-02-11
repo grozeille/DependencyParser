@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
+using Gendarme.Framework;
 using Mono.Cecil;
 using NUnit.Framework;
 
@@ -17,6 +20,14 @@ namespace DependencyParser.Test {
 			var analyzer = new Lcom4Analyzer();
 			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.SimpleClass"));
 			Assert.AreEqual(1, blocks.Count);
+		}
+
+		[Test]
+		public void Should_Find_Two_Blocks_On_A_Simple_Stateless_Class()
+		{
+			var analyzer = new Lcom4Analyzer();
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.SimpleCalculator"));
+			Assert.AreEqual(2, blocks.Count);
 		}
 
 		[Test]
@@ -65,6 +76,22 @@ namespace DependencyParser.Test {
 		{
 			var analyzer = new Lcom4Analyzer();
 			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.AbstractTemplateClass"));
+			Assert.AreEqual(1, blocks.Count);
+		}
+
+		[Test]
+		public void Should_Ignore_Empty_Methods()
+		{
+			var analyzer = new Lcom4Analyzer();
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.ClassWithEmptyMethods"));
+			Assert.AreEqual(0, blocks.Count);
+		}
+
+		[Test]
+		public void Should_Take_In_Account_Calls_Ignore_Empty_Methods()
+		{
+			var analyzer = new Lcom4Analyzer();
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.ClassWithCallsToEmptyMethods"));
 			Assert.AreEqual(1, blocks.Count);
 		}
 
@@ -142,6 +169,28 @@ namespace DependencyParser.Test {
 			Assert.AreEqual(1, blocks.Count);
 		}
 
+		[Test]
+		public void Should_Take_In_Account_Field_References()
+		{
+			var definition = AssemblyDefinition.ReadAssembly(@"testdata\external\Spring.Core.dll", new ReaderParameters { AssemblyResolver = AssemblyResolver.Resolver });
+
+			var clientType = definition.MainModule.GetType("Spring.Collections.Generic", "ReadOnlyDictionary`2");
+			var analyzer = new Lcom4Analyzer();
+			var blocks = analyzer.FindLcomBlocks(clientType);
+			Assert.AreEqual(12, blocks.Count);
+		}
+
+		[Test]
+		public void Should_Ignore_Empty_Virtual_Methods()
+		{
+			var definition = AssemblyDefinition.ReadAssembly(@"testdata\external\Spring.Core.dll", new ReaderParameters { AssemblyResolver = AssemblyResolver.Resolver });
+
+			var clientType = definition.MainModule.GetType("Spring.Expressions.Parser.antlr.debug", "ParserListenerBase");
+			var analyzer = new Lcom4Analyzer();
+			var blocks = analyzer.FindLcomBlocks(clientType);
+			Assert.AreEqual(0, blocks.Count);
+		}
+
 		private TypeDefinition GetType(string name)
 		{
 			string unit = Assembly.GetExecutingAssembly().Location;
@@ -172,6 +221,19 @@ namespace DependencyParser.Test {
 		public void Decrement()
 		{
 			counter--;
+		}
+	}
+
+	public class SimpleCalculator {
+
+		public int Add(int x, int y)
+		{
+			return x + y;
+		}
+
+		public int Sub(int x, int y)
+		{
+			return x - y;
 		}
 	}
 
@@ -312,6 +374,38 @@ namespace DependencyParser.Test {
 
 	}
 
+	public class ClassWithEmptyMethods {
+
+		public void Foo()
+		{
+		}
+
+		public void Bar()
+		{
+		}
+
+		public virtual void VirBar()
+		{
+		}
+	}
+
+	public class ClassWithCallsToEmptyMethods {
+
+		public void Foo()
+		{
+			VirBar();
+		}
+
+		public void Bar()
+		{
+			VirBar();
+		}
+
+		public virtual void VirBar()
+		{
+		}
+	}
+
 	public class SimpleDisposableClass : IDisposable
 	{
 		public void DoSomething()
@@ -440,5 +534,29 @@ namespace DependencyParser.Test {
 			Console.WriteLine("factory method");
 			return new SimpleClassWithStaticMethod();
 		}
+	}
+
+	public abstract class ClassWithExternalCalls  {
+		/// <summary>
+		/// Inner storage for ReadOnlyDictionary
+		/// </summary>
+		private readonly Thread _thread;
+
+		public ClassWithExternalCalls(Thread thread)
+		{
+			thread = _thread;
+		}
+
+		
+		public void Stop()
+		{
+			_thread.Abort();
+		}
+
+		public void Start()
+		{
+			_thread.Start();
+		}
+
 	}
 }

@@ -1,4 +1,4 @@
-﻿<type fullName="DependencyParser.Test.SimpleClassWithTwoFields" rfc="42" dit="17">
+﻿<type fullName="DependencyParser.Test.SimpleClassWithTwoFields" source="" rfc="42" dit="17">
   <block>
     <element type="Field" name="fieldA" />
     <element type="Method" name="System.Void doA()" />

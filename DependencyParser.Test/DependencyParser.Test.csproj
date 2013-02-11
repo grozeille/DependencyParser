@@ -37,6 +37,10 @@
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Gendarme.Framework, Version=2.11.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Mono.Gendarme.2.11.0.20121120\tools\Gendarme.Framework.dll</HintPath>
+    </Reference>
     <Reference Include="Mono.Cecil">
       <HintPath>..\packages\Mono.Cecil.0.9.5.4\lib\net40\Mono.Cecil.dll</HintPath>
     </Reference>
@@ -55,7 +59,7 @@
     <Compile Include="DependencyParserTest.cs" />
     <Compile Include="DethOfInheritanceTreeAnalyzerTest.cs" />
     <Compile Include="Lcom4AnalyzerTest.cs" />
-    <Compile Include="DesignMeasuresWriterTest.cs" />
+    <Compile Include="DesignMeasuresTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResponseForClassAnalyzerTest.cs" />
   </ItemGroup>
@@ -67,6 +71,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="testdata\Example.Core.pdb">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="testdata\external\Spring.Core.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="testdata\test.xml">

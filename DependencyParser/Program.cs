@@ -170,12 +170,8 @@ namespace DependencyParser
                 }
 
                 writer.WriteEndElement();
-				
-				writer.WriteStartElement("Design");
-				foreach (var t in module.Types) {
-					GenerateTypeDesignMeasures(writer, t);
-				}
-				writer.WriteEndElement();
+
+            	GenerateTypeDesignMeasures(writer, module);
 				
             }
 
@@ -189,17 +185,69 @@ namespace DependencyParser
             Parsed.Add(module.Assembly.Name.FullName);
         }
 
-		public static void GenerateTypeDesignMeasures(XmlTextWriter writer, TypeDefinition t)
+		public static void GenerateTypeDesignMeasures(XmlTextWriter writer, ModuleDefinition module)
 		{
-			var designWriter = new DesignMeasuresWriter() { Xml = writer, Type = t};
-			designWriter.Lcom4Blocks = lcom4Analyzer.FindLcomBlocks(t);
-			designWriter.ResponseForClass = rfcAnalyzer.ComputeRFC(t);
-			designWriter.DethOfInheritance = ditAnalyzer.ComputeDIT(t);
+			writer.WriteStartElement("Design");
+			var sourceRegistry = new SourceRegistry(module);
+			
+			// first generate and write measures for types colocated in the same files
+			GenerateMultiTypeDesignMeasures(writer, module, sourceRegistry);
 
-			designWriter.Write();
+			// then deal with type with source locations not treated before
+			foreach (var t in module.Types)
+			{
+				var path = t.GetSourcePath();
+				if (path!=null && !sourceRegistry.IsMultiTypeFile(path))
+				{
+					DesignMeasures measures = GenerateTypeMeasures(t);
+					measures.Write(writer);
+				}
+			}
+
+			// and at last deal with types without source location
+			foreach (var t in module.Types) {
+				var path = t.GetSourcePath();
+				if (path == null) {
+					var measures = GenerateTypeMeasures(t);
+					measures.Write(writer);
+				}
+			}
+
+			writer.WriteEndElement();
 		}
 
-        public static void ParseType(XmlTextWriter writer, TypeDefinition t)
+    	private static DesignMeasures GenerateTypeMeasures(TypeDefinition t)
+		{
+			return new DesignMeasures {
+				Type = t,
+				Lcom4Blocks = lcom4Analyzer.FindLcomBlocks(t),
+				ResponseForClass = rfcAnalyzer.ComputeRFC(t),
+				DethOfInheritance = ditAnalyzer.ComputeDIT(t)
+			};
+		}
+
+    	private static void GenerateMultiTypeDesignMeasures(XmlTextWriter writer, ModuleDefinition module, SourceRegistry sourceRegistry)
+		{
+			var multiTypeMeasures = new Dictionary<string, DesignMeasures>();
+			foreach (var t in module.Types) {
+
+				var path = t.GetSourcePath();
+
+				if (sourceRegistry.IsMultiTypeFile(path)) {
+					var measures = GenerateTypeMeasures(t);
+					if (multiTypeMeasures.ContainsKey(path)) {
+						multiTypeMeasures[path] = multiTypeMeasures[path].Merge(measures);
+					} else {
+						multiTypeMeasures[path] = measures;
+					}
+				}
+			}
+			foreach (var multiTypeMeasure in multiTypeMeasures.Values) {
+				multiTypeMeasure.Write(writer);
+			}
+		}
+
+    	public static void ParseType(XmlTextWriter writer, TypeDefinition t)
         {
             // ignore generated types
             if (t.DeclaringType == null && t.Namespace.Equals(string.Empty))

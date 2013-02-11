@@ -80,10 +80,12 @@
   <ItemGroup>
     <Compile Include="DethOfInheritanceTreeAnalyzer.cs" />
     <Compile Include="Lcom4Analyzer.cs" />
-    <Compile Include="DesignMeasuresWriter.cs" />
+    <Compile Include="DesignMeasures.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResponseForClassAnalyzer.cs" />
+    <Compile Include="SourceHelper.cs" />
+    <Compile Include="SourceRegistry.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

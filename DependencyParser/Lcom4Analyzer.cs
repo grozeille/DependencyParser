@@ -21,7 +21,7 @@ namespace DependencyParser {
 			var memberBlocks = new Dictionary<MemberReference, HashSet<MemberReference>>();
 			foreach (var method in t.Methods)
 			{
-				if (NeedToBeFiltered(t, method))
+				if (NeedToBeFiltered(t, method) || IsEmpty(method))
 				{
 					continue;
 				}
@@ -47,6 +47,10 @@ namespace DependencyParser {
 						{
 							case OperandType.InlineField:
 								FieldDefinition fd = inst.Operand as FieldDefinition;
+								if (fd == null && inst.Operand is FieldReference)
+								{
+									fd = ((FieldReference) inst.Operand).Resolve();
+								}
 								if (null != fd && (!fd.IsGeneratedCode() || method.IsSetter || method.IsGetter))
 								{
 									mr = fd;
@@ -151,6 +155,11 @@ namespace DependencyParser {
 		{
 			var method = reference as MethodDefinition;
 			return method!=null && (!method.HasBody || method.IsGeneratedCode());
+		}
+
+		private bool IsEmpty(MethodDefinition method)
+		{
+			return !(method.HasBody && method.Body.Instructions.Count(inst => inst.OpCode.Code != Code.Ret && inst.OpCode.Code != Code.Nop) > 0);
 		}
 	}
 }
