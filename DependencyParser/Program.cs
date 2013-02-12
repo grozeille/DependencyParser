@@ -30,13 +30,15 @@ namespace DependencyParser
             bool showHelp = false;
             string assemblyName =   "ASSEMBLY.DLL";
             string outputPath = "output.xml";
-
-            var p = new OptionSet() 
+        	IEnumerable<string> ignorableFieldNames = null;
+            
+			var p = new OptionSet() 
             {
                 { "a|assembly=", "the name of the assembly to scan", v => assemblyName = v },
                 { "o|output=", "the path to the output XML", v => outputPath = v },
                 { "h|help",  "show this message and exit", v => showHelp = v != null },
-				{ "d|design",  "flag that enables design analysis", d => designAnalysis = d != null }
+				{ "d|design",  "flag that enables design analysis", d => designAnalysis = d != null },
+				{ "i|ignorable_fields=",  "When design analysis is enabled, comma list of names of fields that should not be taken in account for LCOM4 analysis", list => ignorableFieldNames = list.Split(',') }
             };
 
         	try
@@ -56,6 +58,11 @@ namespace DependencyParser
 				Console.WriteLine("Use -a=[ASSSEMBLY] where ASSEMBLY is an assembly file");
 				Console.WriteLine("and -o=[OUTPUT] where OUTPUT is the xml report file that will be generated");
 				return;
+			}
+
+			if (ignorableFieldNames!=null)
+			{
+				lcom4Analyzer.IgnorableFieldNames = ignorableFieldNames;
 			}
 
 

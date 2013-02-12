@@ -16,6 +16,20 @@ namespace DependencyParser {
 	/// </summary>
 	public class Lcom4Analyzer {
 
+		private IEnumerable<string> ignorableFieldNames = new string[] {};
+
+		public IEnumerable<string> IgnorableFieldNames
+		{
+			get
+			{
+				return ignorableFieldNames;
+			}
+			set
+			{
+				ignorableFieldNames = from n in value select n.ToLowerInvariant();
+			}
+		}
+
 		public HashSet<HashSet<MemberReference>> FindLcomBlocks(TypeDefinition t)
 		{
 			var memberBlocks = new Dictionary<MemberReference, HashSet<MemberReference>>();
@@ -46,8 +60,13 @@ namespace DependencyParser {
 						switch (inst.OpCode.OperandType)
 						{
 							case OperandType.InlineField:
-								FieldDefinition fd = inst.Operand as FieldDefinition;
-								if (fd == null && inst.Operand is FieldReference)
+
+								FieldReference fr = inst.Operand as FieldReference;
+								if (fr==null || IgnorableFieldNames.Contains(fr.Name.ToLowerInvariant())) {
+									break;
+								}
+								FieldDefinition fd = fr as FieldDefinition;
+								if (fd == null)
 								{
 									fd = ((FieldReference) inst.Operand).Resolve();
 								}

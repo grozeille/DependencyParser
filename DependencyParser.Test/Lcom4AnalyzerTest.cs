@@ -191,6 +191,15 @@ namespace DependencyParser.Test {
 			Assert.AreEqual(0, blocks.Count);
 		}
 
+		[Test]
+		public void Should_Take_In_Account_The_Ignorable_Field_Names()
+		{
+			var analyzer = new Lcom4Analyzer() { IgnorableFieldNames = new string[] {"Counter"} } ;
+
+			var blocks = analyzer.FindLcomBlocks(GetType("DependencyParser.Test.SimpleClass"));
+			Assert.AreEqual(2, blocks.Count);
+		}
+
 		private TypeDefinition GetType(string name)
 		{
 			string unit = Assembly.GetExecutingAssembly().Location;
