@@ -22,7 +22,7 @@ namespace DependencyParser.Test {
 				{
 					writer.Formatting = Formatting.Indented;
 					var designWriter = new DesignMeasures();
-					var typeDefinition = getType("DependencyParser.Test.SimpleClassWithTwoFields");
+					var typeDefinition = GetType(typeof(SimpleClassWithTwoFields));
 					var blocks = new HashSet<HashSet<MemberReference>>();
 				
 					foreach (var mth in typeDefinition.Methods)
@@ -44,8 +44,9 @@ namespace DependencyParser.Test {
 			Assert.AreEqual(expected, result);
 		}
 
-		private TypeDefinition getType(string name)
+		private TypeDefinition GetType(Type t)
 		{
+			string name = t.FullName;
 			string unit = Assembly.GetExecutingAssembly().Location;
 			var assembly = AssemblyDefinition.ReadAssembly(unit);
 			return assembly.MainModule.GetType(name);

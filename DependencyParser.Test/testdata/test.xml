@@ -9,20 +9,14 @@
         <To fullname="Example.Core.Money" assemblyname="Example.Core" assemblyversion="1.0.0.0" />
         <To fullname="Example.Core.MoneyBag" assemblyname="Example.Core" assemblyversion="1.0.0.0" />
       </From>
-      <From fullname="Example.Core.Model.SubType/Alex3" />
-      <From fullname="Example.Core.Model.SubType" />
-      <From fullname="Example.Core.Money/Alex2" />
       <From fullname="Example.Core.Money">
         <To fullname="Example.Core.IMoney" assemblyname="Example.Core" assemblyversion="1.0.0.0" />
         <To fullname="Example.Core.MoneyBag" assemblyname="Example.Core" assemblyversion="1.0.0.0" />
       </From>
-      <From fullname="Example.Core.Alex" />
       <From fullname="Example.Core.MoneyBag">
         <To fullname="Example.Core.IMoney" assemblyname="Example.Core" assemblyversion="1.0.0.0" />
         <To fullname="Example.Core.Money" assemblyname="Example.Core" assemblyversion="1.0.0.0" />
       </From>
-      <From fullname="Example.Core.SampleMeasure/Possible" />
-      <From fullname="Example.Core.SampleMeasure" />
     </TypeReferences>
     <Design>
       <type fullName="Example.Core.Money" source="c:\work\sonar-cs\dotnet\tools\dotnet-tools-commons\src\test\resources\solution\Example\Example.Core\Money.cs" rfc="24" dit="1">

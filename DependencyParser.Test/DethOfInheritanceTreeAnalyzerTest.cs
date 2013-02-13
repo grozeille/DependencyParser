@@ -14,14 +14,15 @@ namespace DependencyParser.Test {
 		[Test]
 		public void Should_Compute_DIT()
 		{
-			var t = GetType("DependencyParser.Test.DethOfInheritanceTreeAnalyzerTest");
+			var t = GetType(typeof(DethOfInheritanceTreeAnalyzerTest));
 			var result = new DethOfInheritanceTreeAnalyzer().ComputeDIT(t);
 			Assert.AreEqual(1, result);
 		}
 
 
-		private TypeDefinition GetType(string name)
+		private TypeDefinition GetType(Type t)
 		{
+			string name = t.FullName;
 			string unit = Assembly.GetExecutingAssembly().Location;
 			var assembly = AssemblyDefinition.ReadAssembly(unit);
 			return assembly.MainModule.GetType(name);

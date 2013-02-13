@@ -78,6 +78,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DependencyAnalyzer.cs" />
     <Compile Include="DethOfInheritanceTreeAnalyzer.cs" />
     <Compile Include="Lcom4Analyzer.cs" />
     <Compile Include="DesignMeasures.cs" />

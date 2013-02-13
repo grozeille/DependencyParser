@@ -23,6 +23,8 @@ namespace DependencyParser
 
 		private static readonly DethOfInheritanceTreeAnalyzer ditAnalyzer = new DethOfInheritanceTreeAnalyzer();
 
+		private static readonly DependencyAnalyzer dependencyAnalyzer = new DependencyAnalyzer();
+
 		private static bool designAnalysis = false;
 
         public static void Main(string[] args)
@@ -259,158 +261,30 @@ namespace DependencyParser
 			}
 		}
 
-    	public static void ParseType(XmlTextWriter writer, TypeDefinition t)
-        {
-            // ignore generated types
-            if (t.DeclaringType == null && t.Namespace.Equals(string.Empty))
-            {
-                return;
-            }
+		public static void ParseType(XmlTextWriter writer, TypeDefinition t)
+		{
+			var dependencies = dependencyAnalyzer.FindTypeDependencies(t);
+			if (dependencies != null && dependencies.Count() > 0) {
+				writer.WriteStartElement("From");
+				writer.WriteAttributeString("fullname", t.FullName);
 
-            if (t.Name.StartsWith("<>"))
-            {
-                return;
-            }
+				foreach (var to in dependencies) {
+					writer.WriteStartElement("To");
+					writer.WriteAttributeString("fullname", to.FullName);
+					if (to.Scope is ModuleDefinition) {
+						writer.WriteAttributeString("assemblyname", ((ModuleDefinition)to.Scope).Assembly.Name.Name);
+						writer.WriteAttributeString("assemblyversion", ((ModuleDefinition)to.Scope).Assembly.Name.Version.ToString());
+					} else if (to.Scope is AssemblyNameReference) {
+						writer.WriteAttributeString("assemblyname", ((AssemblyNameReference)to.Scope).Name);
+						writer.WriteAttributeString("assemblyversion", ((AssemblyNameReference)to.Scope).Version.ToString());
+					}
 
-            foreach (var n in t.NestedTypes)
-            {
-                ParseType(writer, n);
-            }
+					writer.WriteEndElement();
+				}
 
-            Dictionary<string, IList<string>> cache = new Dictionary<string, IList<string>>();
-            writer.WriteStartElement("From");
-            writer.WriteAttributeString("fullname", t.FullName);
+				writer.WriteEndElement();
+			}
+		}
 
-            foreach (var c in t.CustomAttributes)
-            {
-                AddDependency(writer, cache, t, c.AttributeType);
-            }
-
-            if (t.BaseType != null)
-            {
-                AddDependency(writer, cache, t, t.BaseType);
-            }
-
-            foreach (var i in t.Interfaces)
-            {
-                AddDependency(writer, cache, t, i);
-            }
-
-            foreach (var e in t.Events)
-            {
-                AddDependency(writer, cache, t, e.EventType);
-            }
-
-            foreach (var f in t.Fields)
-            {
-                AddDependency(writer, cache, t, f.FieldType);
-            }
-
-            foreach (var p in t.Properties)
-            {
-                AddDependency(writer, cache, t, p.PropertyType);
-            }
-
-            foreach (var m in t.Methods)
-            {
-                AddDependency(writer, cache, t, m.ReturnType);
-
-                foreach (var p in m.Parameters)
-                {
-                    AddDependency(writer, cache, t, p.ParameterType);
-                }
-
-                if (m.Body != null)
-                {
-                    //m.Body.Instructions[0].SequencePoint.Document
-
-                    foreach (var v in m.Body.Variables)
-                    {
-                        AddDependency(writer, cache, t, v.VariableType);
-                    }
-
-                    foreach (var e in m.Body.ExceptionHandlers)
-                    {
-                        if (e.CatchType != null)
-                        {
-                            AddDependency(writer, cache, t, e.CatchType);
-                        }
-                    }
-                }
-            }
-
-            writer.WriteEndElement();
-        }
-
-        public static void AddDependency(XmlTextWriter writer, IDictionary<string, IList<string>> cache, TypeDefinition from, TypeReference to)
-        {
-            if (from.FullName.Equals(to.FullName))
-            {
-                return;
-            }
-
-            // ignore generic parameters
-            if (to.IsGenericParameter)
-            {
-                return;
-            }
-
-            // ignore generated types, without namespace
-            if (to.Namespace.Equals(string.Empty))
-            {
-                return;
-            }
-
-            if (to.IsArray)
-            {
-                to = to.GetElementType();
-            }
-
-            if (to.IsGenericInstance)
-            {
-                var generic = (GenericInstanceType)to;
-                foreach (var a in generic.GenericArguments)
-                {
-                    AddDependency(writer, cache, from, a);
-                }
-                to = to.GetElementType();
-            }
-
-            // ignore types from .Net framework
-            if (to.Scope.Name.Equals("mscorlib") || to.Scope.Name.StartsWith("System") || to.Scope.Name.StartsWith("Microsoft"))
-            {
-                return;
-            }
-
-            IList<string> toList;
-            if (!cache.TryGetValue(from.FullName, out toList))
-            {
-                toList = new List<string>();
-                cache.Add(from.FullName, toList);
-            }
-
-            if (toList.Contains(to.FullName))
-            {
-                return;
-            }
-
-            
-            writer.WriteStartElement("To");
-            writer.WriteAttributeString("fullname", to.FullName);
-            if (to.Scope is ModuleDefinition)
-            {
-                writer.WriteAttributeString("assemblyname", ((ModuleDefinition)to.Scope).Assembly.Name.Name);
-                writer.WriteAttributeString("assemblyversion", ((ModuleDefinition)to.Scope).Assembly.Name.Version.ToString());
-            }
-            else if(to.Scope is AssemblyNameReference)
-            {
-                writer.WriteAttributeString("assemblyname", ((AssemblyNameReference)to.Scope).Name);
-                writer.WriteAttributeString("assemblyversion", ((AssemblyNameReference)to.Scope).Version.ToString());
-            }
-
-            writer.WriteEndElement();
-
-            toList.Add(to.FullName);
-        }
     }
 }
