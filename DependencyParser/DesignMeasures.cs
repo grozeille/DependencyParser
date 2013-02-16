@@ -24,10 +24,30 @@ namespace DependencyParser {
 		public IEnumerable<IEnumerable<MemberReference>> Lcom4Blocks { set; private get; }
 
 
+		private IEnumerable<string> mergedTypes;
+		private IEnumerable<string> MergedTypesNames
+		{
+			set
+			{
+				mergedTypes = value;
+			}
+			
+			get
+			{
+				if (mergedTypes == null)
+				{
+					return new string[] { Type.FullName };
+				}
+				return mergedTypes;
+			}
+		}
+
+
 		public DesignMeasures Merge(DesignMeasures measures)
 		{
 			return new DesignMeasures() {
 				Type = Type,
+				MergedTypesNames = MergedTypesNames.Union(measures.MergedTypesNames),
 				ResponseForClass = Math.Max(ResponseForClass, measures.ResponseForClass),
 				DethOfInheritance = Math.Max(DethOfInheritance, measures.DethOfInheritance),
 				Lcom4Blocks = Lcom4Blocks.Union(measures.Lcom4Blocks)
@@ -38,6 +58,12 @@ namespace DependencyParser {
 		{
 			xml.WriteStartElement("type");
 			xml.WriteAttributeString("fullName", Type.FullName);
+			
+			if (MergedTypesNames.Count()>1)
+			{
+				xml.WriteAttributeString("mergedTypes", string.Join(",", MergedTypesNames));
+			}
+
 			xml.WriteAttributeString("source", Type.GetSourcePath());
 			xml.WriteAttributeString("rfc", ResponseForClass.ToString());
 			xml.WriteAttributeString("dit", DethOfInheritance.ToString());

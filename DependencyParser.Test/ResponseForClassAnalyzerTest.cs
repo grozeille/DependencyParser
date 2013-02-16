@@ -20,7 +20,7 @@ namespace DependencyParser.Test {
 		{
 			var analyzer = new ResponseForClassAnalyzer();
 			
-			Assert.AreEqual(6, analyzer.ComputeRFC(GetType("DependencyParser.Test.ClassA")));
+			Assert.AreEqual(6, analyzer.ComputeRFC(typeof(ClassA).GetCecilType()));
 		}
 
 		[Test]
@@ -28,7 +28,7 @@ namespace DependencyParser.Test {
 		{
 			var analyzer = new ResponseForClassAnalyzer();
 
-			Assert.AreEqual(1, analyzer.ComputeRFC(GetType("DependencyParser.Test.Country")));
+			Assert.AreEqual(1, analyzer.ComputeRFC(typeof(Country).GetCecilType()));
 		}
 
 		[Test]
@@ -36,17 +36,8 @@ namespace DependencyParser.Test {
 		{
 			var analyzer = new ResponseForClassAnalyzer();
 
-			Assert.AreEqual(3, analyzer.ComputeRFC(GetType("DependencyParser.Test.Employee")));
+			Assert.AreEqual(3, analyzer.ComputeRFC(typeof(Employee).GetCecilType()));
 		}
-
-		private TypeDefinition GetType(string name)
-		{
-			string unit = Assembly.GetExecutingAssembly().Location;
-			var assembly = AssemblyDefinition.ReadAssembly(unit);
-			return assembly.MainModule.GetType(name);
-		}
-
-
 	}
 
 	public class ClassA {

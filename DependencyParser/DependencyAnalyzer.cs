@@ -9,7 +9,7 @@ namespace DependencyParser {
 
 
 	/// <summary>
-	/// TODO: Update summary.
+	/// Type analyzer that provides dependencies to other classes
 	/// </summary>
 	public class DependencyAnalyzer {
 
@@ -19,6 +19,19 @@ namespace DependencyParser {
 			FindTypeDependencies(result, t);
 			result.Remove(t);
 			return result;
+		}
+
+		/// <summary>
+		/// Remove dependencies to .Net framework
+		/// </summary>
+		/// <param name="unfilteredDependencies"></param>
+		/// <returns></returns>
+		public IEnumerable<TypeReference> FilterSystemDependencies(IEnumerable<TypeReference> unfilteredDependencies)
+		{
+			return from t in unfilteredDependencies
+			       where
+			       	!(t.Scope.Name.Equals("mscorlib") || t.Scope.Name.StartsWith("System") || t.Scope.Name.StartsWith("Microsoft"))
+			       select t;
 		}
 
 		public void FindTypeDependencies(ISet<TypeReference> result, TypeDefinition t)
@@ -86,8 +99,7 @@ namespace DependencyParser {
 		private void AddDependency(ISet<TypeReference> result, TypeReference to)
 		{
 			// ignore generic parameters
-			// and ignore types from .Net framework
-			if (to.IsGenericParameter || to.Namespace.Equals(string.Empty) || to.Scope.Name.Equals("mscorlib") || to.Scope.Name.StartsWith("System") || to.Scope.Name.StartsWith("Microsoft")) {
+			if (to.IsGenericParameter || to.Namespace.Equals(string.Empty)) {
 				return;
 			}
 

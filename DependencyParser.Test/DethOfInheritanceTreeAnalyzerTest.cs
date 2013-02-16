@@ -14,18 +14,9 @@ namespace DependencyParser.Test {
 		[Test]
 		public void Should_Compute_DIT()
 		{
-			var t = GetType(typeof(DethOfInheritanceTreeAnalyzerTest));
+			var t = typeof(DethOfInheritanceTreeAnalyzerTest).GetCecilType();
 			var result = new DethOfInheritanceTreeAnalyzer().ComputeDIT(t);
 			Assert.AreEqual(1, result);
-		}
-
-
-		private TypeDefinition GetType(Type t)
-		{
-			string name = t.FullName;
-			string unit = Assembly.GetExecutingAssembly().Location;
-			var assembly = AssemblyDefinition.ReadAssembly(unit);
-			return assembly.MainModule.GetType(name);
 		}
 	}
 }

@@ -13,7 +13,7 @@ namespace DependencyParser.Test {
 	[NUnit.Framework.TestFixture]
 	public class DesignMeasuresTest {
 		[Test]
-		public void Should_Generate()
+		public void Should_Write_Correct_XML()
 		{
 			File.Delete("lcom4-generated.xml");
 			using (var stream = new FileStream("lcom4-generated.xml", FileMode.Create))
@@ -21,8 +21,8 @@ namespace DependencyParser.Test {
 				using (var writer = new XmlTextWriter(stream, Encoding.UTF8))
 				{
 					writer.Formatting = Formatting.Indented;
-					var designWriter = new DesignMeasures();
-					var typeDefinition = GetType(typeof(SimpleClassWithTwoFields));
+					var measure = new DesignMeasures();
+					var typeDefinition = typeof(SimpleClassWithTwoFields).GetCecilType();
 					var blocks = new HashSet<HashSet<MemberReference>>();
 				
 					foreach (var mth in typeDefinition.Methods)
@@ -30,12 +30,12 @@ namespace DependencyParser.Test {
 						var block = new HashSet<MemberReference> { mth, typeDefinition.Fields.First() };
 						blocks.Add(block);
 					}
-					designWriter.Type = typeDefinition;
-					designWriter.Lcom4Blocks = blocks;
-					designWriter.ResponseForClass = 42;
-					designWriter.DethOfInheritance = 17;
+					measure.Type = typeDefinition;
+					measure.Lcom4Blocks = blocks;
+					measure.ResponseForClass = 42;
+					measure.DethOfInheritance = 17;
 
-					designWriter.Write(writer);
+					measure.Write(writer);
 				}
 			}
 			string expected = File.ReadAllText("lcom4-expected.xml");
@@ -44,12 +44,38 @@ namespace DependencyParser.Test {
 			Assert.AreEqual(expected, result);
 		}
 
-		private TypeDefinition GetType(Type t)
+		[Test]
+		public void Should_Merge_Measures()
 		{
-			string name = t.FullName;
-			string unit = Assembly.GetExecutingAssembly().Location;
-			var assembly = AssemblyDefinition.ReadAssembly(unit);
-			return assembly.MainModule.GetType(name);
+			File.Delete("types-merged-generated.xml");
+			var measure = new DesignMeasures();
+			var typeDefinition = typeof(SimpleClassWithTwoFields).GetCecilType();
+			measure.Type = typeDefinition;
+			measure.ResponseForClass = 42;
+			measure.DethOfInheritance = 17;
+			measure.Lcom4Blocks = Enumerable.Empty<IEnumerable<MemberReference>>();
+
+			var measure2 = new DesignMeasures();
+			var typeDefinition2 = typeof(DesignMeasuresTest).GetCecilType();
+			measure2.Type = typeDefinition2;
+			measure2.ResponseForClass = 36;
+			measure2.DethOfInheritance = 42;
+			measure2.Lcom4Blocks = Enumerable.Empty<IEnumerable<MemberReference>>();
+
+			var mergedMeasures = measure.Merge(measure2);
+			using (var stream = new FileStream("types-merged-generated.xml", FileMode.Create))
+			{
+				using (var writer = new XmlTextWriter(stream, Encoding.UTF8))
+				{
+					writer.Formatting = Formatting.Indented;
+					mergedMeasures.Write(writer);
+				}
+			}
+
+			string expected = File.ReadAllText("types-merged-expected.xml");
+			string result = File.ReadAllText("types-merged-generated.xml");
+			Assert.AreEqual(expected, result);
+
 		}
 	}
 

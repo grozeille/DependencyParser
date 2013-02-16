@@ -25,6 +25,9 @@ namespace DependencyParser
 
 		private static readonly DependencyAnalyzer dependencyAnalyzer = new DependencyAnalyzer();
 
+		private static readonly ArchitectureRuleEngine architectureRuleEngine = new ArchitectureRuleEngine();
+
+
 		private static bool designAnalysis = false;
 
         public static void Main(string[] args)
@@ -40,6 +43,7 @@ namespace DependencyParser
                 { "o|output=", "the path to the output XML", v => outputPath = v },
                 { "h|help",  "show this message and exit", v => showHelp = v != null },
 				{ "d|design",  "flag that enables design analysis", d => designAnalysis = d != null },
+				{ "r|rules=", "Architecture rules comma separated", r => architectureRuleEngine.Init(r) },
 				{ "i|ignorable_fields=",  "When design analysis is enabled, comma list of names of fields that should not be taken in account for LCOM4 analysis", list => ignorableFieldNames = list.Split(',') }
             };
 
@@ -264,25 +268,41 @@ namespace DependencyParser
 		public static void ParseType(XmlTextWriter writer, TypeDefinition t)
 		{
 			var dependencies = dependencyAnalyzer.FindTypeDependencies(t);
+			
 			if (dependencies != null && dependencies.Count() > 0) {
-				writer.WriteStartElement("From");
-				writer.WriteAttributeString("fullname", t.FullName);
+				var filteredDependencies = dependencyAnalyzer.FilterSystemDependencies(dependencies);
+				if (filteredDependencies.Count() > 0)
+				{
+					writer.WriteStartElement("From");
+					writer.WriteAttributeString("fullname", t.FullName);
 
-				foreach (var to in dependencies) {
-					writer.WriteStartElement("To");
-					writer.WriteAttributeString("fullname", to.FullName);
-					if (to.Scope is ModuleDefinition) {
-						writer.WriteAttributeString("assemblyname", ((ModuleDefinition)to.Scope).Assembly.Name.Name);
-						writer.WriteAttributeString("assemblyversion", ((ModuleDefinition)to.Scope).Assembly.Name.Version.ToString());
-					} else if (to.Scope is AssemblyNameReference) {
-						writer.WriteAttributeString("assemblyname", ((AssemblyNameReference)to.Scope).Name);
-						writer.WriteAttributeString("assemblyversion", ((AssemblyNameReference)to.Scope).Version.ToString());
+					var path = t.GetSourcePath();
+					if (path != null)
+					{
+						writer.WriteAttributeString("path", path);
 					}
 
+					foreach (var to in filteredDependencies) {
+						writer.WriteStartElement("To");
+						writer.WriteAttributeString("fullname", to.FullName);
+
+						if (to.Scope is ModuleDefinition) {
+							writer.WriteAttributeString("assemblyname", ((ModuleDefinition)to.Scope).Assembly.Name.Name);
+							writer.WriteAttributeString("assemblyversion", ((ModuleDefinition)to.Scope).Assembly.Name.Version.ToString());
+						} else if (to.Scope is AssemblyNameReference) {
+							writer.WriteAttributeString("assemblyname", ((AssemblyNameReference)to.Scope).Name);
+							writer.WriteAttributeString("assemblyversion", ((AssemblyNameReference)to.Scope).Version.ToString());
+						}
+
+						writer.WriteEndElement();
+					}
 					writer.WriteEndElement();
 				}
-
-				writer.WriteEndElement();
+				var violations = architectureRuleEngine.FindArchitectureViolation(t, dependencies);
+				foreach (var violation in violations)
+				{
+					violation.Write(writer);
+				}
 			}
 		}
 

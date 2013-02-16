@@ -9,17 +9,17 @@
         <To fullname="Example.Core.Money" assemblyname="Example.Core" assemblyversion="1.0.0.0" />
         <To fullname="Example.Core.MoneyBag" assemblyname="Example.Core" assemblyversion="1.0.0.0" />
       </From>
-      <From fullname="Example.Core.Money">
+      <From fullname="Example.Core.Money" path="c:\work\sonar-cs\dotnet\tools\dotnet-tools-commons\src\test\resources\solution\Example\Example.Core\Money.cs">
         <To fullname="Example.Core.IMoney" assemblyname="Example.Core" assemblyversion="1.0.0.0" />
         <To fullname="Example.Core.MoneyBag" assemblyname="Example.Core" assemblyversion="1.0.0.0" />
       </From>
-      <From fullname="Example.Core.MoneyBag">
+      <From fullname="Example.Core.MoneyBag" path="c:\work\sonar-cs\dotnet\tools\dotnet-tools-commons\src\test\resources\solution\Example\Example.Core\MoneyBag.cs">
         <To fullname="Example.Core.IMoney" assemblyname="Example.Core" assemblyversion="1.0.0.0" />
         <To fullname="Example.Core.Money" assemblyname="Example.Core" assemblyversion="1.0.0.0" />
       </From>
     </TypeReferences>
     <Design>
-      <type fullName="Example.Core.Money" source="c:\work\sonar-cs\dotnet\tools\dotnet-tools-commons\src\test\resources\solution\Example\Example.Core\Money.cs" rfc="24" dit="1">
+      <type fullName="Example.Core.Money" mergedTypes="Example.Core.Money,Example.Core.Alex" source="c:\work\sonar-cs\dotnet\tools\dotnet-tools-commons\src\test\resources\solution\Example\Example.Core\Money.cs" rfc="24" dit="1">
         <block>
           <element type="Field" name="fAmount" />
           <element type="Field" name="fCurrency" />

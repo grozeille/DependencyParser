@@ -24,54 +24,45 @@ namespace DependencyParser.Test {
 		[Test]
 		public void Should_Find_Dependencies_From_Attributes()
 		{
-			var dependencies = analyzer.FindTypeDependencies(GetType(this.GetType()));
+			var dependencies = analyzer.FindTypeDependencies(this.GetType().GetCecilType());
 			Assert.AreEqual(1, dependencies.Count(n => n.FullName == typeof(TestAttribute).FullName));
 		}
 
 		[Test]
 		public void Should_Find_Dependencies_From_Fields()
 		{
-			var dependencies = analyzer.FindTypeDependencies(GetType(this.GetType()));
+			var dependencies = analyzer.FindTypeDependencies(this.GetType().GetCecilType());
 			Assert.AreEqual(1, dependencies.Count(n => n.FullName == typeof(DependencyAnalyzer).FullName));
 		}
 
 		[Test]
 		public void Should_Find_Dependencies_From_Properties()
 		{
-			var dependencies = analyzer.FindTypeDependencies(GetType(typeof(ClassWithProperty)));
-			Assert.IsTrue(dependencies.Contains(GetType(typeof(Thread))));
+			var dependencies = analyzer.FindTypeDependencies(typeof(ClassWithProperty).GetCecilType());
+			Assert.IsTrue(dependencies.Contains(typeof(Thread).GetCecilType()));
 		}
 
 		[Test]
 		public void Should_Find_Dependencies_From_Parameters()
 		{
-			var dependencies = analyzer.FindTypeDependencies(GetType(typeof(ClassWithCallsOnParameters)));
-			Assert.IsTrue(dependencies.Contains(GetType(typeof(Thread))));
+			var dependencies = analyzer.FindTypeDependencies(typeof(ClassWithCallsOnParameters).GetCecilType());
+			Assert.IsTrue(dependencies.Contains(typeof(Thread).GetCecilType()));
 		}
 
 		[Test]
 		public void Should_Find_Dependencies_From_Array()
 		{
-			var dependencies = analyzer.FindTypeDependencies(GetType(typeof(ClassWithArray)));
-			Assert.IsTrue(dependencies.Contains(GetType(typeof(Thread))));
+			var dependencies = analyzer.FindTypeDependencies(typeof(ClassWithArray).GetCecilType());
+			Assert.IsTrue(dependencies.Contains(typeof(Thread).GetCecilType()));
 		}
 
 		[Test]
 		public void Should_Ignore_System_Dependencies()
 		{
-			var dependencies = analyzer.FindTypeDependencies(GetType(typeof(ClassWithSystemDependency)));
+			var dependencies = analyzer.FindTypeDependencies(typeof(ClassWithSystemDependency).GetCecilType());
+			dependencies = analyzer.FilterSystemDependencies(dependencies);
 			Assert.AreEqual(0, dependencies.Count(n => n.FullName.Contains("Dictionary")));
 		}
-
-		private TypeDefinition GetType(Type t)
-		{
-			string name = t.FullName;
-			string unit = Assembly.GetExecutingAssembly().Location;
-			var assembly = AssemblyDefinition.ReadAssembly(unit);
-			return assembly.MainModule.GetType(name);
-		}
-
-
 	}
 
 	public class ClassWithProperty {
