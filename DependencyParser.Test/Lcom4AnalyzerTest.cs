@@ -170,6 +170,34 @@ namespace DependencyParser.Test {
 		}
 
 		[Test]
+		public void Should_Not_Take_In_Account_Linq_Fields_In_Accessors()
+		{
+			var analyzer = new Lcom4Analyzer();
+			var blocks = analyzer.FindLcomBlocks(typeof(PropertyWithLinq).GetCecilType());
+			Assert.AreEqual(1, blocks.Count);
+			// get, set and backing field
+			Assert.AreEqual(3, blocks.First().Count);
+		}
+
+		[Test]
+		public void Should_Not_Take_In_Account_References_To_Static_Fields()
+		{
+			var analyzer = new Lcom4Analyzer();
+			var blocks = analyzer.FindLcomBlocks(typeof(SimpleClassWithStaticField).GetCecilType());
+			Assert.AreEqual(1, blocks.Count);
+			Assert.AreEqual(1, blocks.First().Count);
+		}
+
+		[Test]
+		public void Should_Not_Take_In_Account_References_To_External_Fields()
+		{
+			var analyzer = new Lcom4Analyzer();
+			var blocks = analyzer.FindLcomBlocks(typeof(SimpleClassWithReferenceToExternalField).GetCecilType());
+			Assert.AreEqual(1, blocks.Count);
+			Assert.AreEqual(1, blocks.First().Count);
+		}
+
+		[Test]
 		public void Should_Take_In_Account_Field_References()
 		{
 			var definition = AssemblyDefinition.ReadAssembly(@"testdata\external\Spring.Core.dll", new ReaderParameters { AssemblyResolver = AssemblyResolver.Resolver });
@@ -222,6 +250,31 @@ namespace DependencyParser.Test {
 		public void Decrement()
 		{
 			counter--;
+		}
+	}
+
+	public class SimpleClassWithStaticField {
+
+		private static string STRING = "FOO BAR";
+
+		public void Do(string param)
+		{
+			if (param == STRING) {
+				Console.WriteLine("whatever!");
+			}
+		}
+	}
+
+	public class SimpleClassHolder {
+		public string toto = "";
+	}
+
+	public class SimpleClassWithReferenceToExternalField {
+	
+		public void Do(string param)
+		{
+			Console.WriteLine("whatever!" + new SimpleClassHolder().toto);
+			
 		}
 	}
 
@@ -534,6 +587,23 @@ namespace DependencyParser.Test {
 		{
 			Console.WriteLine("factory method");
 			return new SimpleClassWithStaticMethod();
+		}
+	}
+
+	public class PropertyWithLinq {
+
+		private IEnumerable<string> ignorableFieldNames = new string[] { };
+
+		public IEnumerable<string> IgnorableFieldNames
+		{
+			get
+			{
+				return ignorableFieldNames;
+			}
+			set
+			{
+				ignorableFieldNames = from n in value select n.ToLowerInvariant();
+			}
 		}
 	}
 }

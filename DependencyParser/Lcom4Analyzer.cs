@@ -70,7 +70,7 @@ namespace DependencyParser {
 								{
 									fd = ((FieldReference) inst.Operand).Resolve();
 								}
-								if (null != fd && (!fd.IsGeneratedCode() || method.IsSetter || method.IsGetter))
+								if (null != fd && !NeedToBeFiltered(method, fd))
 								{
 									mr = fd;
 								}
@@ -119,6 +119,15 @@ namespace DependencyParser {
 				   || "GetHashCode" == method.Name);
 
 		}
+
+		private bool NeedToBeFiltered(MethodDefinition method, FieldDefinition field)
+		{
+			return field.DeclaringType != method.DeclaringType
+			       || field.IsStatic
+			       || (field.IsGeneratedCode() && !(field.Name.Contains("BackingField") && (method.IsSetter || method.IsGetter)));
+		}
+
+		
 
 		private HashSet<HashSet<MemberReference>> MergeBlocks(IEnumerable<HashSet<MemberReference>> memberBlocks)
 		{
