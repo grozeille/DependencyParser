@@ -78,12 +78,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ArchitectureRule.cs" />
+    <Compile Include="ArchitectureRuleEngine.cs" />
+    <Compile Include="ArchitectureViolation.cs" />
+    <Compile Include="DependencyAnalyzer.cs" />
     <Compile Include="DethOfInheritanceTreeAnalyzer.cs" />
     <Compile Include="Lcom4Analyzer.cs" />
-    <Compile Include="DesignMeasuresWriter.cs" />
+    <Compile Include="DesignMeasures.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResponseForClassAnalyzer.cs" />
+    <Compile Include="SourceHelper.cs" />
+    <Compile Include="SourceRegistry.cs" />
+    <Compile Include="WildcardPatternMatcher.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

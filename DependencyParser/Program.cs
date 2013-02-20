@@ -23,17 +23,28 @@ namespace DependencyParser
 
 		private static readonly DethOfInheritanceTreeAnalyzer ditAnalyzer = new DethOfInheritanceTreeAnalyzer();
 
+		private static readonly DependencyAnalyzer dependencyAnalyzer = new DependencyAnalyzer();
+
+		private static readonly ArchitectureRuleEngine architectureRuleEngine = new ArchitectureRuleEngine();
+
+
+		private static bool designAnalysis = false;
+
         public static void Main(string[] args)
         {
             bool showHelp = false;
             string assemblyName =   "ASSEMBLY.DLL";
             string outputPath = "output.xml";
+        	IEnumerable<string> ignorableFieldNames = null;
             
-            var p = new OptionSet() 
+			var p = new OptionSet() 
             {
                 { "a|assembly=", "the name of the assembly to scan", v => assemblyName = v },
                 { "o|output=", "the path to the output XML", v => outputPath = v },
                 { "h|help",  "show this message and exit", v => showHelp = v != null },
+				{ "d|design",  "flag that enables design analysis", d => designAnalysis = d != null },
+				{ "r|rules=", "Architecture rules comma separated", r => architectureRuleEngine.Init(r) },
+				{ "i|ignorable_fields=",  "When design analysis is enabled, comma list of names of fields that should not be taken in account for LCOM4 analysis", list => ignorableFieldNames = list.Split(',') }
             };
 
         	try
@@ -53,6 +64,11 @@ namespace DependencyParser
 				Console.WriteLine("Use -a=[ASSSEMBLY] where ASSEMBLY is an assembly file");
 				Console.WriteLine("and -o=[OUTPUT] where OUTPUT is the xml report file that will be generated");
 				return;
+			}
+
+			if (ignorableFieldNames!=null)
+			{
+				lcom4Analyzer.IgnorableFieldNames = ignorableFieldNames;
 			}
 
 
@@ -170,13 +186,11 @@ namespace DependencyParser
                 }
 
                 writer.WriteEndElement();
-				
-				writer.WriteStartElement("Design");
-				foreach (var t in module.Types) {
-					GenerateTypeDesignMeasures(writer, t);
+
+				if (designAnalysis)
+				{
+					GenerateTypeDesignMeasures(writer, module);	
 				}
-				writer.WriteEndElement();
-				
             }
 
             writer.WriteEndElement();
@@ -189,168 +203,108 @@ namespace DependencyParser
             Parsed.Add(module.Assembly.Name.FullName);
         }
 
-		public static void GenerateTypeDesignMeasures(XmlTextWriter writer, TypeDefinition t)
+		public static void GenerateTypeDesignMeasures(XmlTextWriter writer, ModuleDefinition module)
 		{
-			var designWriter = new DesignMeasuresWriter() { Xml = writer, Type = t};
-			designWriter.Lcom4Blocks = lcom4Analyzer.FindLcomBlocks(t);
-			designWriter.ResponseForClass = rfcAnalyzer.ComputeRFC(t);
-			designWriter.DethOfInheritance = ditAnalyzer.ComputeDIT(t);
+			writer.WriteStartElement("Design");
+			var sourceRegistry = new SourceRegistry(module);
+			
+			// first generate and write measures for types colocated in the same files
+			GenerateMultiTypeDesignMeasures(writer, module, sourceRegistry);
 
-			designWriter.Write();
+			// then deal with type with source locations not treated before
+			foreach (var t in module.Types)
+			{
+				var path = t.GetSourcePath();
+				if (path!=null && !sourceRegistry.IsMultiTypeFile(path))
+				{
+					DesignMeasures measures = GenerateTypeMeasures(t);
+					measures.Write(writer);
+				}
+			}
+
+			// and at last deal with types without source location
+			foreach (var t in module.Types) {
+				var path = t.GetSourcePath();
+				if (path == null) {
+					var measures = GenerateTypeMeasures(t);
+					measures.Write(writer);
+				}
+			}
+
+			writer.WriteEndElement();
 		}
 
-        public static void ParseType(XmlTextWriter writer, TypeDefinition t)
-        {
-            // ignore generated types
-            if (t.DeclaringType == null && t.Namespace.Equals(string.Empty))
-            {
-                return;
-            }
+    	private static DesignMeasures GenerateTypeMeasures(TypeDefinition t)
+		{
+			return new DesignMeasures {
+				Type = t,
+				Lcom4Blocks = lcom4Analyzer.FindLcomBlocks(t),
+				ResponseForClass = rfcAnalyzer.ComputeRFC(t),
+				DethOfInheritance = ditAnalyzer.ComputeDIT(t)
+			};
+		}
 
-            if (t.Name.StartsWith("<>"))
-            {
-                return;
-            }
+    	private static void GenerateMultiTypeDesignMeasures(XmlTextWriter writer, ModuleDefinition module, SourceRegistry sourceRegistry)
+		{
+			var multiTypeMeasures = new Dictionary<string, DesignMeasures>();
+			foreach (var t in module.Types) {
 
-            foreach (var n in t.NestedTypes)
-            {
-                ParseType(writer, n);
-            }
+				var path = t.GetSourcePath();
 
-            Dictionary<string, IList<string>> cache = new Dictionary<string, IList<string>>();
-            writer.WriteStartElement("From");
-            writer.WriteAttributeString("fullname", t.FullName);
+				if (sourceRegistry.IsMultiTypeFile(path)) {
+					var measures = GenerateTypeMeasures(t);
+					if (multiTypeMeasures.ContainsKey(path)) {
+						multiTypeMeasures[path] = multiTypeMeasures[path].Merge(measures);
+					} else {
+						multiTypeMeasures[path] = measures;
+					}
+				}
+			}
+			foreach (var multiTypeMeasure in multiTypeMeasures.Values) {
+				multiTypeMeasure.Write(writer);
+			}
+		}
 
-            foreach (var c in t.CustomAttributes)
-            {
-                AddDependency(writer, cache, t, c.AttributeType);
-            }
+		public static void ParseType(XmlTextWriter writer, TypeDefinition t)
+		{
+			var dependencies = dependencyAnalyzer.FindTypeDependencies(t);
+			
+			if (dependencies != null && dependencies.Count() > 0) {
+				var filteredDependencies = dependencyAnalyzer.FilterSystemDependencies(dependencies);
+				if (filteredDependencies.Count() > 0)
+				{
+					writer.WriteStartElement("From");
+					writer.WriteAttributeString("fullname", t.FullName);
 
-            if (t.BaseType != null)
-            {
-                AddDependency(writer, cache, t, t.BaseType);
-            }
+					var path = t.GetSourcePath();
+					if (path != null)
+					{
+						writer.WriteAttributeString("path", path);
+					}
 
-            foreach (var i in t.Interfaces)
-            {
-                AddDependency(writer, cache, t, i);
-            }
+					foreach (var to in filteredDependencies) {
+						writer.WriteStartElement("To");
+						writer.WriteAttributeString("fullname", to.FullName);
 
-            foreach (var e in t.Events)
-            {
-                AddDependency(writer, cache, t, e.EventType);
-            }
+						if (to.Scope is ModuleDefinition) {
+							writer.WriteAttributeString("assemblyname", ((ModuleDefinition)to.Scope).Assembly.Name.Name);
+							writer.WriteAttributeString("assemblyversion", ((ModuleDefinition)to.Scope).Assembly.Name.Version.ToString());
+						} else if (to.Scope is AssemblyNameReference) {
+							writer.WriteAttributeString("assemblyname", ((AssemblyNameReference)to.Scope).Name);
+							writer.WriteAttributeString("assemblyversion", ((AssemblyNameReference)to.Scope).Version.ToString());
+						}
 
-            foreach (var f in t.Fields)
-            {
-                AddDependency(writer, cache, t, f.FieldType);
-            }
+						writer.WriteEndElement();
+					}
+					writer.WriteEndElement();
+				}
+				var violations = architectureRuleEngine.FindArchitectureViolation(t, dependencies);
+				foreach (var violation in violations)
+				{
+					violation.Write(writer);
+				}
+			}
+		}
 
-            foreach (var p in t.Properties)
-            {
-                AddDependency(writer, cache, t, p.PropertyType);
-            }
-
-            foreach (var m in t.Methods)
-            {
-                AddDependency(writer, cache, t, m.ReturnType);
-
-                foreach (var p in m.Parameters)
-                {
-                    AddDependency(writer, cache, t, p.ParameterType);
-                }
-
-                if (m.Body != null)
-                {
-                    //m.Body.Instructions[0].SequencePoint.Document
-
-                    foreach (var v in m.Body.Variables)
-                    {
-                        AddDependency(writer, cache, t, v.VariableType);
-                    }
-
-                    foreach (var e in m.Body.ExceptionHandlers)
-                    {
-                        if (e.CatchType != null)
-                        {
-                            AddDependency(writer, cache, t, e.CatchType);
-                        }
-                    }
-                }
-            }
-
-            writer.WriteEndElement();
-        }
-
-        public static void AddDependency(XmlTextWriter writer, IDictionary<string, IList<string>> cache, TypeDefinition from, TypeReference to)
-        {
-            if (from.FullName.Equals(to.FullName))
-            {
-                return;
-            }
-
-            // ignore generic parameters
-            if (to.IsGenericParameter)
-            {
-                return;
-            }
-
-            // ignore generated types, without namespace
-            if (to.Namespace.Equals(string.Empty))
-            {
-                return;
-            }
-
-            if (to.IsArray)
-            {
-                to = to.GetElementType();
-            }
-
-            if (to.IsGenericInstance)
-            {
-                var generic = (GenericInstanceType)to;
-                foreach (var a in generic.GenericArguments)
-                {
-                    AddDependency(writer, cache, from, a);
-                }
-                to = to.GetElementType();
-            }
-
-            // ignore types from .Net framework
-            if (to.Scope.Name.Equals("mscorlib") || to.Scope.Name.StartsWith("System") || to.Scope.Name.StartsWith("Microsoft"))
-            {
-                return;
-            }
-
-            IList<string> toList;
-            if (!cache.TryGetValue(from.FullName, out toList))
-            {
-                toList = new List<string>();
-                cache.Add(from.FullName, toList);
-            }
-
-            if (toList.Contains(to.FullName))
-            {
-                return;
-            }
-
-            
-            writer.WriteStartElement("To");
-            writer.WriteAttributeString("fullname", to.FullName);
-            if (to.Scope is ModuleDefinition)
-            {
-                writer.WriteAttributeString("assemblyname", ((ModuleDefinition)to.Scope).Assembly.Name.Name);
-                writer.WriteAttributeString("assemblyversion", ((ModuleDefinition)to.Scope).Assembly.Name.Version.ToString());
-            }
-            else if(to.Scope is AssemblyNameReference)
-            {
-                writer.WriteAttributeString("assemblyname", ((AssemblyNameReference)to.Scope).Name);
-                writer.WriteAttributeString("assemblyversion", ((AssemblyNameReference)to.Scope).Version.ToString());
-            }
-
-            writer.WriteEndElement();
-
-            toList.Add(to.FullName);
-        }
     }
 }

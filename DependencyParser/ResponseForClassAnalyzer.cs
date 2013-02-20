@@ -58,7 +58,7 @@ namespace DependencyParser {
 
 		private bool NeedToBeFiltered(TypeDefinition typeDefinition, MethodReference method)
 		{
-			try
+			try 
 			{
 				return method.IsGeneratedCode();
 			} catch(AssemblyResolutionException)

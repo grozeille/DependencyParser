@@ -16,12 +16,26 @@ namespace DependencyParser {
 	/// </summary>
 	public class Lcom4Analyzer {
 
+		private IEnumerable<string> ignorableFieldNames = new string[] {};
+
+		public IEnumerable<string> IgnorableFieldNames
+		{
+			get
+			{
+				return ignorableFieldNames;
+			}
+			set
+			{
+				ignorableFieldNames = from n in value select n.ToLowerInvariant();
+			}
+		}
+
 		public HashSet<HashSet<MemberReference>> FindLcomBlocks(TypeDefinition t)
 		{
 			var memberBlocks = new Dictionary<MemberReference, HashSet<MemberReference>>();
 			foreach (var method in t.Methods)
 			{
-				if (NeedToBeFiltered(t, method))
+				if (NeedToBeFiltered(t, method) || IsEmpty(method))
 				{
 					continue;
 				}
@@ -46,8 +60,17 @@ namespace DependencyParser {
 						switch (inst.OpCode.OperandType)
 						{
 							case OperandType.InlineField:
-								FieldDefinition fd = inst.Operand as FieldDefinition;
-								if (null != fd && (!fd.IsGeneratedCode() || method.IsSetter || method.IsGetter))
+
+								FieldReference fr = inst.Operand as FieldReference;
+								if (fr==null || IgnorableFieldNames.Contains(fr.Name.ToLowerInvariant())) {
+									break;
+								}
+								FieldDefinition fd = fr as FieldDefinition;
+								if (fd == null)
+								{
+									fd = ((FieldReference) inst.Operand).Resolve();
+								}
+								if (null != fd && !NeedToBeFiltered(method, fd))
 								{
 									mr = fd;
 								}
@@ -96,6 +119,15 @@ namespace DependencyParser {
 				   || "GetHashCode" == method.Name);
 
 		}
+
+		private bool NeedToBeFiltered(MethodDefinition method, FieldDefinition field)
+		{
+			return field.DeclaringType != method.DeclaringType
+			       || field.IsStatic
+			       || (field.IsGeneratedCode() && !(field.Name.Contains("BackingField") && (method.IsSetter || method.IsGetter)));
+		}
+
+		
 
 		private HashSet<HashSet<MemberReference>> MergeBlocks(IEnumerable<HashSet<MemberReference>> memberBlocks)
 		{
@@ -151,6 +183,11 @@ namespace DependencyParser {
 		{
 			var method = reference as MethodDefinition;
 			return method!=null && (!method.HasBody || method.IsGeneratedCode());
+		}
+
+		private bool IsEmpty(MethodDefinition method)
+		{
+			return !(method.HasBody && method.Body.Instructions.Count(inst => inst.OpCode.Code != Code.Ret && inst.OpCode.Code != Code.Nop) > 0);
 		}
 	}
 }

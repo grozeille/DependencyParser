@@ -11,11 +11,9 @@ namespace DependencyParser {
 	/// <summary>
 	/// TODO: Update summary.
 	/// </summary>
-	public class DesignMeasuresWriter {
+	public class DesignMeasures {
 
 		private static readonly ReferenceComparer comparer = new ReferenceComparer();
-
-		public XmlTextWriter Xml { set; private get; }
 
 		public TypeDefinition Type { set; private get; }
 
@@ -25,20 +23,58 @@ namespace DependencyParser {
 
 		public IEnumerable<IEnumerable<MemberReference>> Lcom4Blocks { set; private get; }
 
-		public void Write()
+
+		private IEnumerable<string> mergedTypes;
+		private IEnumerable<string> MergedTypesNames
 		{
-			Xml.WriteStartElement("type");
-			Xml.WriteAttributeString("fullName", Type.FullName);
-			Xml.WriteAttributeString("rfc", ResponseForClass.ToString());
-			Xml.WriteAttributeString("dit", DethOfInheritance.ToString());
+			set
+			{
+				mergedTypes = value;
+			}
+			
+			get
+			{
+				if (mergedTypes == null)
+				{
+					return new string[] { Type.FullName };
+				}
+				return mergedTypes;
+			}
+		}
+
+
+		public DesignMeasures Merge(DesignMeasures measures)
+		{
+			return new DesignMeasures() {
+				Type = Type,
+				MergedTypesNames = MergedTypesNames.Union(measures.MergedTypesNames),
+				ResponseForClass = Math.Max(ResponseForClass, measures.ResponseForClass),
+				DethOfInheritance = Math.Max(DethOfInheritance, measures.DethOfInheritance),
+				Lcom4Blocks = Lcom4Blocks.Union(measures.Lcom4Blocks)
+			};
+		}
+
+		public void Write(XmlTextWriter xml)
+		{
+			xml.WriteStartElement("type");
+			xml.WriteAttributeString("fullName", Type.FullName);
+			
+			if (MergedTypesNames.Count()>1)
+			{
+				xml.WriteAttributeString("mergedTypes", string.Join(",", MergedTypesNames));
+			}
+
+			xml.WriteAttributeString("source", Type.GetSourcePath());
+			xml.WriteAttributeString("rfc", ResponseForClass.ToString());
+			xml.WriteAttributeString("dit", DethOfInheritance.ToString());
 			foreach (var block in Lcom4Blocks)
 			{
 				var orderedBlock = block.OrderBy(x => x, comparer);
 
-				Xml.WriteStartElement("block");
+				xml.WriteStartElement("block");
 				foreach (var memberReference in orderedBlock)
 				{
-					Xml.WriteStartElement("element");
+					xml.WriteStartElement("element");
 					var method = memberReference as MethodDefinition;
 					string name;
 					string elementType;
@@ -51,13 +87,13 @@ namespace DependencyParser {
 						elementType = "Method";
 						name = BuildSignature(method);
 					}
-					Xml.WriteAttributeString("type", elementType);
-					Xml.WriteAttributeString("name", name);
-					Xml.WriteEndElement();
+					xml.WriteAttributeString("type", elementType);
+					xml.WriteAttributeString("name", name);
+					xml.WriteEndElement();
 				}
-				Xml.WriteEndElement();
+				xml.WriteEndElement();
 			}
-			Xml.WriteEndElement();
+			xml.WriteEndElement();
 		}
 
 		private string BuildFieldName(FieldDefinition field)
